@@ -85,7 +85,6 @@ body{
 .pin-error{ color:#e08a8a; font-size:13px; min-height:16px; }
 .pin-hint{ color:var(--gold-dim); font-size:12.5px; opacity:.8; text-align:center; }
 .pin-reset{ background:none; border:none; color:var(--gold-dim); font-size:12px; text-decoration:underline; cursor:pointer; margin-top:2px; }
-.cover-help{ background:none; border:none; color:var(--gold-dim); font-size:12.5px; text-decoration:underline; cursor:pointer; margin-top:16px; }
 
 /* ---------- open book ---------- */
 .book-open{
@@ -181,41 +180,6 @@ body{
 .lightbox.open{ display:flex; }
 .lightbox img{ max-width:100%; max-height:100%; border-radius:4px; }
 
-/* ---------- info / instruction overlay ---------- */
-.info-overlay{
-  display:none; position:fixed; inset:0; background:rgba(10,8,6,.82);
-  align-items:center; justify-content:center; z-index:60; padding:20px;
-}
-.info-overlay.open{ display:flex; }
-.info-card{
-  position:relative;
-  width:min(100%,560px); max-height:86vh; overflow-y:auto;
-  background:var(--paper); color:var(--ink);
-  border-radius:8px; padding:30px 26px 26px;
-  box-shadow:0 30px 70px rgba(0,0,0,.6), inset 0 0 0 1px rgba(198,161,91,.4);
-}
-.info-card h2{ font-family:'Playfair Display',serif; font-size:22px; margin:0 0 4px; }
-.info-card h3{ font-family:'Playfair Display',serif; font-size:16.5px; color:var(--burgundy); margin:22px 0 6px; }
-.info-card p{ font-size:15px; line-height:1.5; margin:8px 0; color:var(--ink-soft); }
-.info-card ul,.info-card ol{ margin:8px 0; padding-left:20px; }
-.info-card li{ font-size:14.5px; line-height:1.5; margin:5px 0; color:var(--ink-soft); }
-.info-card .info-rule{ border:none; border-top:1px solid var(--rule); margin:10px 0; }
-.info-card strong{ color:var(--ink); }
-.info-note{
-  background:rgba(122,34,51,.07); border-left:3px solid var(--burgundy);
-  padding:10px 12px; border-radius:0 4px 4px 0; font-size:14px; color:var(--ink); margin:14px 0;
-}
-.info-close{
-  position:absolute; top:12px; right:14px; background:none; border:none;
-  color:var(--ink-soft); font-size:24px; line-height:1; cursor:pointer;
-}
-.info-close:hover{ color:var(--burgundy); }
-.info-ok{
-  margin-top:20px; width:100%; background:transparent; border:1px solid var(--burgundy); color:var(--burgundy);
-  font-family:'EB Garamond',serif; font-size:15px; padding:9px 10px; border-radius:5px; cursor:pointer;
-}
-.info-ok:hover{ background:rgba(122,34,51,.08); }
-
 .storage-note{ color:var(--ink-soft); font-size:11.5px; opacity:.75; margin-top:18px; line-height:1.4; }
 
 @media (max-width:640px){
@@ -236,7 +200,6 @@ body{
         <h1 class="cover-title">Дневник</h1>
         <p class="cover-sub" id="coverSub">открой и пиши</p>
         <div class="pin-panel" id="pinPanel" style="display:none;"></div>
-        <button class="cover-help" id="coverHelp" type="button">Как это работает</button>
       </div>
     </div>
 
@@ -254,52 +217,6 @@ body{
 
 <div class="lightbox" id="lightbox"><img id="lightboxImg" alt=""></div>
 
-<!-- ---------- окно с инструкцией ---------- -->
-<div class="info-overlay" id="infoOverlay">
-  <div class="info-card">
-    <button class="info-close" id="infoClose" type="button">×</button>
-    <h2>Как это работает</h2>
-    <hr class="info-rule"/>
-
-    <p>Этот дневник — одна веб‑страница по одной ссылке. Ссылка <strong>одна и та же для всех</strong>, но у каждого получается свой личный дневник.</p>
-    <ul>
-      <li>Записи хранятся <strong>в браузере каждого устройства отдельно</strong>.</li>
-      <li>Никто не видит чужие записи.</li>
-      <li>Вы не видите записи других, они не видят ваши.</li>
-      <li>PIN и записи никуда не отправляются — всё остаётся только на вашем устройстве в зашифрованном виде.</li>
-    </ul>
-    <p>То есть ссылка — это как «пустой шаблон дневника», который каждый заполняет только у себя.</p>
-
-    <div class="info-note">
-      <strong>Важно про PIN.</strong> При первом открытии вы придумываете PIN. Он защищает записи. Если PIN забыт — восстановить записи невозможно, даже вам.
-    </div>
-
-    <h3>Резервные копии</h3>
-    <p>Записи живут в браузере этого устройства. Если очистить данные браузера, сломать или сменить телефон — записи пропадут. Поэтому делайте резервные копии.</p>
-
-    <p><strong>Как сделать копию:</strong></p>
-    <ol>
-      <li>Откройте дневник и введите PIN.</li>
-      <li>В оглавлении нажмите <strong>«Скачать резервную копию»</strong>.</li>
-      <li>Сохраните файл вида <strong>diary-backup-….json</strong> в надёжное место — например в iCloud Drive, на почту или в мессенджер.</li>
-    </ol>
-
-    <p><strong>Как восстановить (в т.ч. на новом телефоне):</strong></p>
-    <ol>
-      <li>Откройте ту же ссылку дневника.</li>
-      <li>Создайте дневник и задайте PIN.</li>
-      <li>В оглавлении нажмите <strong>«Восстановить из файла»</strong>.</li>
-      <li>Выберите сохранённый файл — записи и фото вернутся.</li>
-    </ol>
-
-    <div class="info-note">
-      Делайте копию регулярно (например, раз в неделю) и храните её отдельно от телефона. Держите 2–3 последние копии на всякий случай.
-    </div>
-
-    <button class="info-ok" id="infoOk" type="button">Понятно</button>
-  </div>
-</div>
-
 <script>
 const bookClosed = document.getElementById('bookClosed');
 const bookOpen = document.getElementById('bookOpen');
@@ -312,18 +229,6 @@ const coverSub = document.getElementById('coverSub');
 const pinPanel = document.getElementById('pinPanel');
 const lightbox = document.getElementById('lightbox');
 const lightboxImg = document.getElementById('lightboxImg');
-const coverHelp = document.getElementById('coverHelp');
-const infoOverlay = document.getElementById('infoOverlay');
-const infoClose = document.getElementById('infoClose');
-const infoOk = document.getElementById('infoOk');
-
-/* --- открытие / закрытие окна с инструкцией --- */
-function openInfo(){ infoOverlay.classList.add('open'); }
-function closeInfo(){ infoOverlay.classList.remove('open'); }
-coverHelp.addEventListener('click', (e)=>{ e.stopPropagation(); openInfo(); });
-infoClose.addEventListener('click', closeInfo);
-infoOk.addEventListener('click', closeInfo);
-infoOverlay.addEventListener('click', (e)=>{ if(e.target === infoOverlay) closeInfo(); });
 
 const LS_SALT = 'diary_salt';
 const LS_CHECK_IV = 'diary_check_iv';
@@ -531,7 +436,6 @@ function renderLeft(){
       <label class="side-link" style="cursor:pointer;">Восстановить из файла
         <input type="file" id="importInput" accept="application/json" style="display:none;">
       </label>
-      <button class="side-link" id="helpBtn">Как это работает</button>
     </div>
     <p class="storage-note">Записи хранятся только в этом браузере на этом устройстве, в зашифрованном виде. Без PIN их не прочитать — в том числе и тебе, если PIN забыт.</p>
   `;
@@ -539,7 +443,6 @@ function renderLeft(){
   pageLeft.querySelectorAll('.entry-item').forEach(el=>{
     el.addEventListener('click', ()=>{ currentId = el.dataset.id; turnPage(renderAll); });
   });
-  document.getElementById('helpBtn').addEventListener('click', openInfo);
   document.getElementById('exportBtn').addEventListener('click', ()=>{
     const blob = new Blob([JSON.stringify({entries}, null, 2)], {type:'application/json'});
     const a = document.createElement('a');
@@ -717,4 +620,3 @@ function renderAll(){ renderLeft(); renderRight(); }
 </script>
 </body>
 </html>
-   
