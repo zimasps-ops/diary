@@ -85,7 +85,6 @@ body{
 .pin-error{ color:#e08a8a; font-size:13px; min-height:16px; }
 .pin-hint{ color:var(--gold-dim); font-size:12.5px; opacity:.8; text-align:center; }
 .pin-reset{ background:none; border:none; color:var(--gold-dim); font-size:12px; text-decoration:underline; cursor:pointer; margin-top:2px; }
-.cover-help{ background:none; border:none; color:var(--gold-dim); font-size:12.5px; text-decoration:underline; cursor:pointer; margin-top:16px; }
 
 /* ---------- open book ---------- */
 .book-open{
@@ -181,42 +180,49 @@ body{
 .lightbox.open{ display:flex; }
 .lightbox img{ max-width:100%; max-height:100%; border-radius:4px; }
 
-/* ---------- info / instruction overlay ---------- */
-.info-overlay{
-  display:none; position:fixed; inset:0; background:rgba(10,8,6,.82);
-  align-items:center; justify-content:center; z-index:60; padding:20px;
-}
-.info-overlay.open{ display:flex; }
-.info-card{
-  position:relative;
-  width:min(100%,560px); max-height:86vh; overflow-y:auto;
-  background:var(--paper); color:var(--ink);
-  border-radius:8px; padding:30px 26px 26px;
-  box-shadow:0 30px 70px rgba(0,0,0,.6), inset 0 0 0 1px rgba(198,161,91,.4);
-}
-.info-card h2{ font-family:'Playfair Display',serif; font-size:22px; margin:0 0 4px; }
-.info-card h3{ font-family:'Playfair Display',serif; font-size:16.5px; color:var(--burgundy); margin:22px 0 6px; }
-.info-card p{ font-size:15px; line-height:1.5; margin:8px 0; color:var(--ink-soft); }
-.info-card ul,.info-card ol{ margin:8px 0; padding-left:20px; }
-.info-card li{ font-size:14.5px; line-height:1.5; margin:5px 0; color:var(--ink-soft); }
-.info-card .info-rule{ border:none; border-top:1px solid var(--rule); margin:10px 0; }
-.info-card strong{ color:var(--ink); }
-.info-note{
-  background:rgba(122,34,51,.07); border-left:3px solid var(--burgundy);
-  padding:10px 12px; border-radius:0 4px 4px 0; font-size:14px; color:var(--ink); margin:14px 0;
-}
-.info-close{
-  position:absolute; top:12px; right:14px; background:none; border:none;
-  color:var(--ink-soft); font-size:24px; line-height:1; cursor:pointer;
-}
-.info-close:hover{ color:var(--burgundy); }
-.info-ok{
-  margin-top:20px; width:100%; background:transparent; border:1px solid var(--burgundy); color:var(--burgundy);
-  font-family:'EB Garamond',serif; font-size:15px; padding:9px 10px; border-radius:5px; cursor:pointer;
-}
-.info-ok:hover{ background:rgba(122,34,51,.08); }
-
 .storage-note{ color:var(--ink-soft); font-size:11.5px; opacity:.75; margin-top:18px; line-height:1.4; }
+
+.left-tabs{ display:flex; gap:6px; margin-bottom:10px; }
+.left-tab{
+  background:transparent; border:1px solid var(--rule); color:var(--ink-soft);
+  font-family:'EB Garamond',serif; font-size:12.5px; padding:5px 10px; border-radius:4px 4px 0 0; cursor:pointer;
+}
+.left-tab.active{ background:rgba(122,34,51,.1); border-color:var(--burgundy); color:var(--burgundy); }
+
+.affirm-card, .prompt-card{
+  border:1px solid var(--gold-dim);
+  border-radius:6px;
+  padding:12px 14px;
+  margin-bottom:12px;
+  background:rgba(198,161,91,.06);
+}
+.affirm-label, .prompt-label{
+  font-family:'EB Garamond',serif; font-size:11.5px; letter-spacing:.6px; text-transform:uppercase;
+  color:var(--gold-dim); margin:0 0 6px;
+}
+.affirm-text{
+  font-family:'Caveat', cursive; font-size:21px; line-height:1.3; color:var(--burgundy); margin:0 0 8px;
+}
+.prompt-text{
+  font-family:'EB Garamond',serif; font-style:italic; font-size:15px; line-height:1.4; color:var(--ink); margin:0 0 8px;
+}
+.mini-actions{ display:flex; gap:8px; }
+.mini-btn{
+  background:transparent; border:1px solid var(--gold-dim); color:var(--ink-soft);
+  font-family:'EB Garamond',serif; font-size:12px; padding:4px 10px; border-radius:4px; cursor:pointer;
+}
+.mini-btn:hover{ background:rgba(0,0,0,.04); }
+.mini-btn.saved{ border-color:var(--burgundy); color:var(--burgundy); }
+
+.fav-list{ list-style:none; margin:0; padding:0; }
+.fav-item{
+  display:flex; justify-content:space-between; align-items:flex-start; gap:8px;
+  padding:8px 4px; border-bottom:1px solid var(--rule);
+  font-family:'Caveat', cursive; font-size:19px; color:var(--ink);
+}
+.fav-remove{
+  background:none; border:none; color:var(--ink-soft); font-size:15px; cursor:pointer; flex-shrink:0;
+}
 
 @media (max-width:640px){
   .spread{ flex-direction:column; }
@@ -234,9 +240,8 @@ body{
       <div class="cover" id="coverClick">
         <div class="cover-mark">✒</div>
         <h1 class="cover-title">Дневник</h1>
-        <p class="cover-sub" id="coverSub">открой и пиши</p>
+        <p class="cover-sub" id="coverSub">аффирмации и мысли</p>
         <div class="pin-panel" id="pinPanel" style="display:none;"></div>
-        <button class="cover-help" id="coverHelp" type="button">Как это работает</button>
       </div>
     </div>
 
@@ -254,52 +259,6 @@ body{
 
 <div class="lightbox" id="lightbox"><img id="lightboxImg" alt=""></div>
 
-<!-- ---------- окно с инструкцией ---------- -->
-<div class="info-overlay" id="infoOverlay">
-  <div class="info-card">
-    <button class="info-close" id="infoClose" type="button">×</button>
-    <h2>Как это работает</h2>
-    <hr class="info-rule"/>
-
-    <p>Этот дневник — одна веб‑страница по одной ссылке. Ссылка <strong>одна и та же для всех</strong>, но у каждого получается свой личный дневник.</p>
-    <ul>
-      <li>Записи хранятся <strong>в браузере каждого устройства отдельно</strong>.</li>
-      <li>Никто не видит чужие записи.</li>
-      <li>Вы не видите записи других, они не видят ваши.</li>
-      <li>PIN и записи никуда не отправляются — всё остаётся только на вашем устройстве в зашифрованном виде.</li>
-    </ul>
-    <p>То есть ссылка — это как «пустой шаблон дневника», который каждый заполняет только у себя.</p>
-
-    <div class="info-note">
-      <strong>Важно про PIN.</strong> При первом открытии вы придумываете PIN. Он защищает записи. Если PIN забыт — восстановить записи невозможно, даже вам.
-    </div>
-
-    <h3>Резервные копии</h3>
-    <p>Записи живут в браузере этого устройства. Если очистить данные браузера, сломать или сменить телефон — записи пропадут. Поэтому делайте резервные копии.</p>
-
-    <p><strong>Как сделать копию:</strong></p>
-    <ol>
-      <li>Откройте дневник и введите PIN.</li>
-      <li>В оглавлении нажмите <strong>«Скачать резервную копию»</strong>.</li>
-      <li>Сохраните файл вида <strong>diary-backup-….json</strong> в надёжное место — например в iCloud Drive, на почту или в мессенджер.</li>
-    </ol>
-
-    <p><strong>Как восстановить (в т.ч. на новом телефоне):</strong></p>
-    <ol>
-      <li>Откройте ту же ссылку дневника.</li>
-      <li>Создайте дневник и задайте PIN.</li>
-      <li>В оглавлении нажмите <strong>«Восстановить из файла»</strong>.</li>
-      <li>Выберите сохранённый файл — записи и фото вернутся.</li>
-    </ol>
-
-    <div class="info-note">
-      Делайте копию регулярно (например, раз в неделю) и храните её отдельно от телефона. Держите 2–3 последние копии на всякий случай.
-    </div>
-
-    <button class="info-ok" id="infoOk" type="button">Понятно</button>
-  </div>
-</div>
-
 <script>
 const bookClosed = document.getElementById('bookClosed');
 const bookOpen = document.getElementById('bookOpen');
@@ -312,18 +271,6 @@ const coverSub = document.getElementById('coverSub');
 const pinPanel = document.getElementById('pinPanel');
 const lightbox = document.getElementById('lightbox');
 const lightboxImg = document.getElementById('lightboxImg');
-const coverHelp = document.getElementById('coverHelp');
-const infoOverlay = document.getElementById('infoOverlay');
-const infoClose = document.getElementById('infoClose');
-const infoOk = document.getElementById('infoOk');
-
-/* --- открытие / закрытие окна с инструкцией --- */
-function openInfo(){ infoOverlay.classList.add('open'); }
-function closeInfo(){ infoOverlay.classList.remove('open'); }
-coverHelp.addEventListener('click', (e)=>{ e.stopPropagation(); openInfo(); });
-infoClose.addEventListener('click', closeInfo);
-infoOk.addEventListener('click', closeInfo);
-infoOverlay.addEventListener('click', (e)=>{ if(e.target === infoOverlay) closeInfo(); });
 
 const LS_SALT = 'diary_salt';
 const LS_CHECK_IV = 'diary_check_iv';
@@ -333,9 +280,75 @@ const LS_DATA_CT = 'diary_data_ct';
 
 let cryptoKey = null;
 let entries = [];
+let favorites = [];
 let currentId = null;
 let pendingPhotos = [];
 let editPhotos = null;
+let leftTab = 'entries';
+
+const AFFIRMATIONS = [
+  "Я имею право занимать место и говорить о своих потребностях.",
+  "Моя ценность не зависит от чужого одобрения.",
+  "Я делаю достаточно, даже когда не делаю всё.",
+  "Я могу ошибаться и оставаться хорошим человеком.",
+  "Сегодня я выбираю относиться к себе бережно.",
+  "Я умею начинать заново, сколько бы раз ни понадобилось.",
+  "Мои чувства обоснованы, даже если кто-то с ними не согласен.",
+  "Я имею право менять решение по мере того, как узнаю больше.",
+  "Я не обязана нравиться всем, чтобы быть в порядке.",
+  "Забота о себе — это не эгоизм, а необходимость.",
+  "Я доверяю себе принимать решения, опираясь на то, что знаю сейчас.",
+  "Медленный прогресс — всё равно прогресс.",
+  "Я умею отдыхать без чувства вины.",
+  "Моё мнение имеет значение, даже когда оно отличается от других.",
+  "Я не обязана объяснять каждое своё «нет».",
+  "Я расту, даже когда этого не видно со стороны.",
+  "Я умею просить о помощи, и это не слабость.",
+  "Я имею право на границы в любых отношениях.",
+  "Сравнение с другими не определяет мою ценность.",
+  "Я могу гордиться собой за маленькие шаги.",
+  "Моё прошлое не приговор моему будущему.",
+  "Я разрешаю себе быть неидеальной и любимой одновременно.",
+  "Я выбираю говорить с собой так, как говорила бы с близким человеком.",
+  "Каждый день — новая возможность начать иначе.",
+  "Я не обязана оправдывать своё существование постоянной продуктивностью.",
+  "Я умею замечать хорошее, не отменяя трудное.",
+  "Я достаточно хороша прямо сейчас, в процессе.",
+  "Моя интуиция заслуживает доверия.",
+  "Я разрешаю себе радоваться без повода.",
+  "Я способна справляться с тем, что приносит жизнь."
+];
+
+const PROMPTS = [
+  "За что ты можешь похвалить себя сегодня — даже за мелочь?",
+  "Какой момент сегодня был самым честным с собой?",
+  "Что ты сделала бы иначе, если бы не боялась осуждения?",
+  "Какая мысль о себе повторяется чаще всего — и правда ли она?",
+  "Кому или чему ты сегодня сказала «нет», защищая себя?",
+  "Что тебе сейчас действительно нужно, но ты это откладываешь?",
+  "Какое качество в себе ты сегодня заметила и оценила?",
+  "О чём ты молчишь, хотя хочется сказать вслух?",
+  "Что бы ты сказала себе пятилетней давности?",
+  "Какой страх сегодня оказался меньше, чем ты ожидала?",
+  "Что в теле подсказывает тебе усталость или тревогу прямо сейчас?",
+  "За что ты благодарна себе — не обстоятельствам, а именно себе?",
+  "Какое решение далось тяжело, но было правильным?",
+  "Что бы изменилось, если бы ты поверила себе чуть больше?",
+  "Какую границу тебе стоит обозначить яснее?",
+  "Что сегодня напомнило тебе, кто ты, когда никто не смотрит?",
+  "Какая привычка мышления больше не служит тебе?",
+  "Если бы неудача была не про тебя, а про опыт — как бы это звучало?",
+  "Что тебе хочется услышать от себя прямо сейчас?",
+  "Какой маленький шаг завтра приблизит тебя к тому, кем ты хочешь быть?"
+];
+
+function pickDailyIndex(len){
+  const d = new Date();
+  const seed = d.getFullYear()*372 + d.getMonth()*31 + d.getDate();
+  return seed % len;
+}
+let sessionAffirmIdx = pickDailyIndex(AFFIRMATIONS.length);
+let sessionPromptIdx = Math.floor(Math.random()*PROMPTS.length);
 
 function b64FromBytes(bytes){
   let bin=''; const arr=new Uint8Array(bytes);
@@ -394,7 +407,7 @@ function renderCreatePin(){
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const key = await deriveKey(p1, salt);
     const check = await encryptJSON(key, {ok:true});
-    const data = await encryptJSON(key, {entries:[]});
+    const data = await encryptJSON(key, {entries:[], favorites:[]});
     localStorage.setItem(LS_SALT, b64FromBytes(salt));
     localStorage.setItem(LS_CHECK_IV, check.iv);
     localStorage.setItem(LS_CHECK_CT, check.ct);
@@ -426,6 +439,7 @@ function renderEnterPin(){
       const data = await decryptJSON(key, localStorage.getItem(LS_DATA_IV), localStorage.getItem(LS_DATA_CT));
       cryptoKey = key;
       entries = data.entries || [];
+      favorites = data.favorites || [];
       openBook();
     }catch(e){
       err.textContent = 'Неверный PIN';
@@ -464,11 +478,11 @@ closeTab.addEventListener('click', ()=>{
   bookClosed.classList.remove('hidden');
   pinPanel.style.display = 'none';
   pinPanel.innerHTML = '';
-  coverSub.textContent = 'открой и пиши';
+  coverSub.textContent = 'аффирмации и мысли';
 });
 
 async function saveEntries(){
-  const data = await encryptJSON(cryptoKey, {entries});
+  const data = await encryptJSON(cryptoKey, {entries, favorites});
   localStorage.setItem(LS_DATA_IV, data.iv);
   localStorage.setItem(LS_DATA_CT, data.ct);
 }
@@ -509,6 +523,36 @@ function escapeHtml(s){
 }
 
 function renderLeft(){
+  const tabsHtml = `
+    <div class="left-tabs">
+      <button class="left-tab ${leftTab==='entries'?'active':''}" id="tabEntries">Записи</button>
+      <button class="left-tab ${leftTab==='favorites'?'active':''}" id="tabFav">Аффирмации ${favorites.length?'('+favorites.length+')':''}</button>
+    </div>
+  `;
+  if(leftTab === 'favorites'){
+    pageLeft.innerHTML = `
+      ${tabsHtml}
+      <h2 class="index-head">Мои аффирмации</h2>
+      <hr class="index-rule"/>
+      ${favorites.length===0
+        ? `<p class="empty-index">Пока пусто. Сохраняй понравившиеся аффирмации со страницы записи звёздочкой.</p>`
+        : `<ul class="fav-list">${favorites.map((f,i)=>`
+            <li class="fav-item"><span>${escapeHtml(f)}</span><button class="fav-remove" data-i="${i}" title="удалить">×</button></li>
+          `).join('')}</ul>`
+      }
+      <p class="storage-note">Записи хранятся только в этом браузере на этом устройстве, в зашифрованном виде. Без PIN их не прочитать — в том числе и тебе, если PIN забыт.</p>
+    `;
+    document.getElementById('tabEntries').addEventListener('click', ()=>{ leftTab='entries'; renderLeft(); });
+    document.getElementById('tabFav').addEventListener('click', ()=>{ leftTab='favorites'; renderLeft(); });
+    pageLeft.querySelectorAll('.fav-remove').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        favorites.splice(+btn.dataset.i, 1);
+        await saveEntries();
+        renderLeft();
+      });
+    });
+    return;
+  }
   const list = sortedEntries();
   const itemsHtml = list.length === 0
     ? `<p class="empty-index">Здесь появятся твои записи.</p>`
@@ -522,6 +566,7 @@ function renderLeft(){
         </li>`;
       }).join('')}</ul>`;
   pageLeft.innerHTML = `
+    ${tabsHtml}
     <h2 class="index-head">Оглавление</h2>
     <hr class="index-rule"/>
     ${itemsHtml}
@@ -531,17 +576,17 @@ function renderLeft(){
       <label class="side-link" style="cursor:pointer;">Восстановить из файла
         <input type="file" id="importInput" accept="application/json" style="display:none;">
       </label>
-      <button class="side-link" id="helpBtn">Как это работает</button>
     </div>
     <p class="storage-note">Записи хранятся только в этом браузере на этом устройстве, в зашифрованном виде. Без PIN их не прочитать — в том числе и тебе, если PIN забыт.</p>
   `;
+  document.getElementById('tabEntries').addEventListener('click', ()=>{ leftTab='entries'; renderLeft(); });
+  document.getElementById('tabFav').addEventListener('click', ()=>{ leftTab='favorites'; renderLeft(); });
   document.getElementById('newBtn').addEventListener('click', ()=>{ currentId=null; pendingPhotos=[]; renderAll(); });
   pageLeft.querySelectorAll('.entry-item').forEach(el=>{
     el.addEventListener('click', ()=>{ currentId = el.dataset.id; turnPage(renderAll); });
   });
-  document.getElementById('helpBtn').addEventListener('click', openInfo);
   document.getElementById('exportBtn').addEventListener('click', ()=>{
-    const blob = new Blob([JSON.stringify({entries}, null, 2)], {type:'application/json'});
+    const blob = new Blob([JSON.stringify({entries, favorites}, null, 2)], {type:'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'diary-backup-' + new Date().toISOString().slice(0,10) + '.json';
@@ -556,6 +601,7 @@ function renderLeft(){
       if(!parsed.entries) throw new Error('bad file');
       if(confirm('Заменить текущие записи содержимым файла?')){
         entries = parsed.entries;
+        favorites = parsed.favorites || [];
         currentId = null;
         await saveEntries();
         renderAll();
@@ -600,10 +646,27 @@ function renderRight(){
   if(currentId === null){
     const today = new Date();
     const { date, weekday } = fmtDate(today.toISOString());
+    const isFav = favorites.includes(AFFIRMATIONS[sessionAffirmIdx]);
     pageRight.innerHTML = `
       <div class="rpage-inner">
         <p class="rdate">${date}</p>
         <p class="rweekday">${weekday}</p>
+        <div class="affirm-card">
+          <p class="affirm-label">Аффирмация дня</p>
+          <p class="affirm-text" id="affirmText">${escapeHtml(AFFIRMATIONS[sessionAffirmIdx])}</p>
+          <div class="mini-actions">
+            <button class="mini-btn" id="affirmShuffle">Другая</button>
+            <button class="mini-btn ${isFav?'saved':''}" id="affirmSave">${isFav ? '★ сохранено' : '☆ сохранить'}</button>
+          </div>
+        </div>
+        <div class="prompt-card">
+          <p class="prompt-label">Подсказка для записи</p>
+          <p class="prompt-text" id="promptText">${escapeHtml(PROMPTS[sessionPromptIdx])}</p>
+          <div class="mini-actions">
+            <button class="mini-btn" id="promptShuffle">Другая</button>
+            <button class="mini-btn" id="promptUse">Использовать</button>
+          </div>
+        </div>
         <textarea class="entry-text" id="newText" placeholder="О чём хочешь написать сегодня?"></textarea>
         <div class="photo-add-row">
           <input type="file" id="newPhotoInput" accept="image/*" multiple style="display:none;">
@@ -620,6 +683,51 @@ function renderRight(){
       wirePhotoGrid(document.getElementById('newPhotoGrid'), ()=>pendingPhotos, refreshNewGrid);
     };
     wirePhotoGrid(document.getElementById('newPhotoGrid'), ()=>pendingPhotos, refreshNewGrid);
+
+    const reRenderKeepDraft = ()=>{
+      const draft = document.getElementById('newText').value;
+      renderRight();
+      const ta = document.getElementById('newText');
+      if(ta) ta.value = draft;
+    };
+    document.getElementById('affirmShuffle').addEventListener('click', ()=>{
+      let next = sessionAffirmIdx;
+      if(AFFIRMATIONS.length > 1){
+        while(next === sessionAffirmIdx) next = Math.floor(Math.random()*AFFIRMATIONS.length);
+      }
+      sessionAffirmIdx = next;
+      reRenderKeepDraft();
+    });
+    document.getElementById('affirmSave').addEventListener('click', async ()=>{
+      const text = AFFIRMATIONS[sessionAffirmIdx];
+      const btn = document.getElementById('affirmSave');
+      if(favorites.includes(text)){
+        favorites = favorites.filter(f=>f!==text);
+        btn.textContent = '☆ сохранить';
+        btn.classList.remove('saved');
+      } else {
+        favorites.push(text);
+        btn.textContent = '★ сохранено';
+        btn.classList.add('saved');
+      }
+      await saveEntries();
+    });
+    document.getElementById('promptShuffle').addEventListener('click', ()=>{
+      let next = sessionPromptIdx;
+      if(PROMPTS.length > 1){
+        while(next === sessionPromptIdx) next = Math.floor(Math.random()*PROMPTS.length);
+      }
+      sessionPromptIdx = next;
+      reRenderKeepDraft();
+    });
+    document.getElementById('promptUse').addEventListener('click', ()=>{
+      const ta = document.getElementById('newText');
+      const prompt = PROMPTS[sessionPromptIdx];
+      ta.value = ta.value ? (prompt + '\n\n' + ta.value) : (prompt + '\n\n');
+      ta.focus();
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+    });
+
     document.getElementById('addPhotoBtn').addEventListener('click', ()=> document.getElementById('newPhotoInput').click());
     document.getElementById('newPhotoInput').addEventListener('change', async (e)=>{
       for(const f of e.target.files){
