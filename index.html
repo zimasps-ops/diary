@@ -234,17 +234,18 @@ const pinPanel = document.getElementById('pinPanel');
 const lightbox = document.getElementById('lightbox');
 const lightboxImg = document.getElementById('lightboxImg');
 
-const LS_SALT = 'diary_salt';
-const LS_CHECK_IV = 'diary_check_iv';
-const LS_CHECK_CT = 'diary_check_ct';
-const LS_DATA_IV = 'diary_data_iv';
-const LS_DATA_CT = 'diary_data_ct';
+// ==== адрес твоего Worker'а для синхронизации (замени на свой) ====
+const API_BASE = 'https://diary-sync.zimasps.workers.dev';
+
+const LS_USERNAME = 'diary_username';
 
 let cryptoKey = null;
 let entries = [];
 let currentId = null;
 let pendingPhotos = [];
 let editPhotos = null;
+let currentUsername = '';
+let currentSalt = null;
 
 function b64FromBytes(bytes){
   let bin=''; const arr=new Uint8Array(bytes);
@@ -279,75 +280,106 @@ async function decryptJSON(key, ivB64, ctB64){
 
 function hasCrypto(){ return !!(window.crypto && window.crypto.subtle); }
 
-function showPinError(msg, panelEl){
-  const errEl = panelEl.querySelector('.pin-error');
-  if(errEl) errEl.textContent = msg || '';
+async function fetchAccount(username){
+  const res = await fetch(`${API_BASE}/diary?user=${encodeURIComponent(username)}`);
+  if(res.status === 404) return null;
+  if(!res.ok) throw new Error('network');
+  return res.json();
 }
-
-function renderCreatePin(){
-  coverSub.textContent = 'придумай PIN для доступа';
-  pinPanel.style.display = 'flex';
-  pinPanel.innerHTML = `
-    <input class="pin-input" type="password" inputmode="numeric" maxlength="8" id="pin1" placeholder="новый PIN">
-    <input class="pin-input" type="password" inputmode="numeric" maxlength="8" id="pin2" placeholder="повтори PIN">
-    <button class="pin-btn" id="createBtn">Создать дневник</button>
-    <p class="pin-error" id="pinErr"></p>
-    <p class="pin-hint">PIN нужен, чтобы никто другой не смог прочитать записи. Забытый PIN восстановить нельзя.</p>
-  `;
-  document.getElementById('createBtn').addEventListener('click', async ()=>{
-    const p1 = document.getElementById('pin1').value.trim();
-    const p2 = document.getElementById('pin2').value.trim();
-    const err = document.getElementById('pinErr');
-    if(p1.length < 4){ err.textContent = 'PIN — минимум 4 символа'; return; }
-    if(p1 !== p2){ err.textContent = 'PIN не совпадает'; return; }
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const key = await deriveKey(p1, salt);
-    const check = await encryptJSON(key, {ok:true});
-    const data = await encryptJSON(key, {entries:[]});
-    localStorage.setItem(LS_SALT, b64FromBytes(salt));
-    localStorage.setItem(LS_CHECK_IV, check.iv);
-    localStorage.setItem(LS_CHECK_CT, check.ct);
-    localStorage.setItem(LS_DATA_IV, data.iv);
-    localStorage.setItem(LS_DATA_CT, data.ct);
-    cryptoKey = key;
-    entries = [];
-    openBook();
+async function pushAccount(payload){
+  const res = await fetch(`${API_BASE}/diary`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
   });
+  if(!res.ok) throw new Error('network');
+  return res.json();
 }
 
-function renderEnterPin(){
-  coverSub.textContent = 'введи PIN';
+function renderLoginForm(){
+  coverSub.textContent = 'войди или создай дневник';
   pinPanel.style.display = 'flex';
+  const savedUser = localStorage.getItem(LS_USERNAME) || '';
   pinPanel.innerHTML = `
-    <input class="pin-input" type="password" inputmode="numeric" maxlength="8" id="pinTry" placeholder="PIN">
-    <button class="pin-btn" id="unlockBtn">Открыть</button>
+    <input class="pin-input" type="text" autocapitalize="off" autocorrect="off" maxlength="30" id="loginUser" placeholder="логин" value="${savedUser}">
+    <input class="pin-input" type="password" inputmode="text" maxlength="20" id="loginPin" placeholder="PIN">
+    <button class="pin-btn" id="loginBtn">Войти</button>
     <p class="pin-error" id="pinErr"></p>
-    <button class="pin-reset" id="resetBtn">Забыл PIN — начать заново</button>
+    <p class="pin-hint">Если такого логина ещё нет — предложим создать новый дневник с ним.</p>
   `;
-  const tryUnlock = async ()=>{
-    const pin = document.getElementById('pinTry').value.trim();
+  const tryLogin = async ()=>{
+    const user = document.getElementById('loginUser').value.trim().toLowerCase();
+    const pin = document.getElementById('loginPin').value.trim();
     const err = document.getElementById('pinErr');
-    if(!pin) return;
+    err.textContent = '';
+    if(!user){ err.textContent = 'Введи логин'; return; }
+    if(pin.length < 4){ err.textContent = 'PIN — минимум 4 символа'; return; }
+    err.textContent = 'Проверяю…';
     try{
-      const salt = bytesFromB64(localStorage.getItem(LS_SALT));
+      const account = await fetchAccount(user);
+      if(account === null){
+        renderConfirmCreate(user, pin);
+        return;
+      }
+      const salt = bytesFromB64(account.salt);
       const key = await deriveKey(pin, salt);
-      await decryptJSON(key, localStorage.getItem(LS_CHECK_IV), localStorage.getItem(LS_CHECK_CT));
-      const data = await decryptJSON(key, localStorage.getItem(LS_DATA_IV), localStorage.getItem(LS_DATA_CT));
+      await decryptJSON(key, account.checkIv, account.checkCt);
+      const data = await decryptJSON(key, account.dataIv, account.dataCt);
       cryptoKey = key;
+      currentUsername = user;
+      currentSalt = salt;
       entries = data.entries || [];
+      localStorage.setItem(LS_USERNAME, user);
       openBook();
     }catch(e){
-      err.textContent = 'Неверный PIN';
+      if(e.message === 'network'){
+        err.textContent = 'Нет связи с сервером. Проверь интернет.';
+      } else {
+        err.textContent = 'Неверный PIN';
+      }
     }
   };
-  document.getElementById('unlockBtn').addEventListener('click', tryUnlock);
-  document.getElementById('pinTry').addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlock(); });
-  document.getElementById('resetBtn').addEventListener('click', ()=>{
-    if(confirm('Все записи на этом устройстве будут удалены без возможности восстановления. Продолжить?')){
-      [LS_SALT,LS_CHECK_IV,LS_CHECK_CT,LS_DATA_IV,LS_DATA_CT].forEach(k=>localStorage.removeItem(k));
-      renderCreatePin();
+  document.getElementById('loginBtn').addEventListener('click', tryLogin);
+  pinPanel.querySelectorAll('.pin-input').forEach(inp=>{
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter') tryLogin(); });
+  });
+}
+
+function renderConfirmCreate(user, pin){
+  coverSub.textContent = 'такого логина ещё нет';
+  pinPanel.innerHTML = `
+    <p class="pin-hint">Логин «${user}» свободен — создадим с ним новый дневник. Введи PIN ещё раз для подтверждения.</p>
+    <input class="pin-input" type="password" maxlength="20" id="pinConfirm" placeholder="повтори PIN">
+    <button class="pin-btn" id="confirmBtn">Создать дневник</button>
+    <button class="pin-reset" id="backBtn">Назад</button>
+    <p class="pin-error" id="pinErr"></p>
+  `;
+  document.getElementById('confirmBtn').addEventListener('click', async ()=>{
+    const err = document.getElementById('pinErr');
+    const pin2 = document.getElementById('pinConfirm').value.trim();
+    if(pin2 !== pin){ err.textContent = 'PIN не совпадает'; return; }
+    err.textContent = 'Создаю…';
+    try{
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const key = await deriveKey(pin, salt);
+      const check = await encryptJSON(key, {ok:true});
+      const data = await encryptJSON(key, {entries:[]});
+      await pushAccount({
+        user, salt: b64FromBytes(salt),
+        checkIv: check.iv, checkCt: check.ct,
+        dataIv: data.iv, dataCt: data.ct
+      });
+      cryptoKey = key;
+      currentUsername = user;
+      currentSalt = salt;
+      entries = [];
+      localStorage.setItem(LS_USERNAME, user);
+      openBook();
+    }catch(e){
+      err.textContent = 'Нет связи с сервером. Проверь интернет и попробуй снова.';
     }
   });
+  document.getElementById('backBtn').addEventListener('click', renderLoginForm);
 }
 
 coverClick.addEventListener('click', ()=>{
@@ -356,11 +388,7 @@ coverClick.addEventListener('click', ()=>{
     coverSub.textContent = 'этот браузер не поддерживает защищённое хранение — открой файл через сайт, а не напрямую';
     return;
   }
-  if(localStorage.getItem(LS_SALT)){
-    renderEnterPin();
-  } else {
-    renderCreatePin();
-  }
+  renderLoginForm();
 });
 
 function openBook(){
@@ -377,9 +405,13 @@ closeTab.addEventListener('click', ()=>{
 });
 
 async function saveEntries(){
+  const check = await encryptJSON(cryptoKey, {ok:true});
   const data = await encryptJSON(cryptoKey, {entries});
-  localStorage.setItem(LS_DATA_IV, data.iv);
-  localStorage.setItem(LS_DATA_CT, data.ct);
+  await pushAccount({
+    user: currentUsername, salt: b64FromBytes(currentSalt),
+    checkIv: check.iv, checkCt: check.ct,
+    dataIv: data.iv, dataCt: data.ct
+  });
 }
 
 function uid(){ return 'e' + Date.now() + Math.random().toString(36).slice(2,7); }
@@ -440,9 +472,19 @@ function renderLeft(){
       <label class="side-link" style="cursor:pointer;">Восстановить из файла
         <input type="file" id="importInput" accept="application/json" style="display:none;">
       </label>
+      <button class="side-link" id="logoutBtn">Выйти из аккаунта</button>
     </div>
-    <p class="storage-note">Записи хранятся только в этом браузере на этом устройстве, в зашифрованном виде. Без PIN их не прочитать — в том числе и тебе, если PIN забыт.</p>
+    <p class="storage-note">Вход по логину «${escapeHtml(currentUsername)}» — можно открыть с любого устройства с этим же логином и PIN. Записи шифруются перед отправкой на сервер: без PIN их не прочитать, в том числе и тебе, если PIN забыт.</p>
   `;
+  document.getElementById('logoutBtn').addEventListener('click', ()=>{
+    if(!confirm('Выйти? Записи останутся на сервере, войти снова можно тем же логином и PIN.')) return;
+    cryptoKey = null; entries = []; currentId = null; currentUsername=''; currentSalt=null;
+    bookOpen.classList.remove('visible');
+    bookClosed.classList.remove('hidden');
+    pinPanel.style.display = 'none';
+    pinPanel.innerHTML = '';
+    coverSub.textContent = 'открой и пиши';
+  });
   document.getElementById('newBtn').addEventListener('click', ()=>{ currentId=null; pendingPhotos=[]; renderAll(); });
   pageLeft.querySelectorAll('.entry-item').forEach(el=>{
     el.addEventListener('click', ()=>{ currentId = el.dataset.id; turnPage(renderAll); });
