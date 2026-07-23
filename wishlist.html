@@ -208,6 +208,11 @@ function uid(){ return 'i' + Date.now() + Math.random().toString(36).slice(2,7);
 function escapeHtml(s){
   return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
+function extractUrl(text){
+  if(!text) return null;
+  const match = text.match(/https?:\/\/[^\s"'<>]+/i);
+  return match ? match[0] : null;
+}
 
 async function apiGet(path){
   const res = await fetch(`${API_BASE}${path}`);
@@ -356,7 +361,8 @@ function renderLeft(){
     ? `<p class="pin-hint" style="text-align:left;color:var(--ink-soft);">Список пока пуст.</p>`
     : items.map(it=>{
         const meta = [it.price, it.link ? '' : ''].filter(Boolean).join(' · ');
-        const linkHtml = it.link ? `<div class="item-link"><a href="${escapeHtml(it.link)}" target="_blank" rel="noopener">${escapeHtml(it.link)}</a></div>` : '';
+        const foundUrl = extractUrl(it.link);
+        const linkHtml = foundUrl ? `<div class="item-link"><a href="${escapeHtml(foundUrl)}" target="_blank" rel="noopener">${escapeHtml(it.link)}</a></div>` : (it.link ? `<div class="item-link">${escapeHtml(it.link)}</div>` : '');
         if(isOwner){
           return `<div class="item-card">
             <p class="item-title">${escapeHtml(it.title)}</p>
@@ -452,8 +458,7 @@ function renderRight(){
       <p class="field-label">Цена (необязательно)</p>
       <input class="field-input" id="fPrice" value="${editing ? escapeHtml(editing.price||'') : ''}" placeholder="например, 2000 ₽">
       <p class="field-label">Ссылка (необязательно)</p>
-      <input class="field-input" id="fLink" value="${editing ? escapeHtml(editing.link||'') : ''}" placeholder="https://...">
-      <p class="field-label">Заметка (необязательно)</p>
+      <input class="field-input" id="fLink" value="${editing ? escapeHtml(editing.link||'') : ''}" placeholder="только ссылка, без текста">      <p class="field-label">Заметка (необязательно)</p>
       <input class="field-input" id="fNote" value="${editing ? escapeHtml(editing.note||'') : ''}" placeholder="цвет, размер и т.п.">
       <div class="rpage-actions">
         <button class="act-btn primary" id="saveItemBtn">${editing ? 'Сохранить' : 'Добавить'}</button>
