@@ -192,8 +192,10 @@ const coverClick = document.getElementById('coverClick');
 const coverSub = document.getElementById('coverSub');
 const pinPanel = document.getElementById('pinPanel');
 
-// ==== адрес твоего wishlist-воркера (замени на свой) ====
+// ==== адрес твоего wishlist-воркера ====
 const API_BASE = 'https://wishlist-sync.zimasps.workers.dev';
+// ==== полный адрес самой этой страницы (для кнопки "скопировать ссылку") ====
+const PAGE_URL = 'https://zimasps-ops.github.io/diary/wishlist.html';
 
 let items = [];
 let viewingUser = '';
@@ -396,7 +398,7 @@ function renderLeft(){
   if(isOwner){
     document.getElementById('newItemBtn').addEventListener('click', ()=>{ rightMode='add'; editingId=null; renderRight(); });
     document.getElementById('shareBtn').addEventListener('click', ()=>{
-      const link = `${location.origin}${location.pathname}?user=${encodeURIComponent(viewingUser)}`;
+      const link = `${PAGE_URL}?user=${encodeURIComponent(viewingUser)}`;
       navigator.clipboard?.writeText(link);
       alert('Ссылка скопирована:\n' + link);
     });
