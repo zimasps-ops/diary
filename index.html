@@ -182,6 +182,37 @@ body{
 
 .storage-note{ color:var(--ink-soft); font-size:11.5px; opacity:.75; margin-top:18px; line-height:1.4; }
 
+.left-tabs{ display:flex; gap:6px; margin-bottom:10px; }
+.left-tab{
+  background:transparent; border:1px solid var(--rule); color:var(--ink-soft);
+  font-family:'EB Garamond',serif; font-size:12.5px; padding:5px 10px; border-radius:4px 4px 0 0; cursor:pointer;
+}
+.left-tab.active{ background:rgba(122,34,51,.1); border-color:var(--burgundy); color:var(--burgundy); }
+
+.stat-row{ display:flex; gap:8px; margin-bottom:16px; }
+.stat-box{
+  flex:1; text-align:center; border:1px solid var(--rule); border-radius:6px; padding:10px 6px;
+  background:rgba(255,255,255,.35);
+}
+.stat-num{ font-family:'Playfair Display',serif; font-size:24px; color:var(--burgundy); }
+.stat-label{ font-size:11px; color:var(--ink-soft); margin-top:2px; }
+
+.badge-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.badge{
+  text-align:center; border:1px solid var(--rule); border-radius:8px; padding:10px 4px;
+  background:rgba(255,255,255,.3);
+}
+.badge.locked{ opacity:.35; filter:grayscale(1); }
+.badge.unlocked{ border-color:var(--gold-dim); background:rgba(198,161,91,.1); }
+.badge-icon{ font-size:26px; }
+.badge-label{ font-size:10.5px; color:var(--ink-soft); margin-top:4px; line-height:1.2; }
+
+.streak-banner{
+  display:flex; align-items:center; gap:8px; border:1px solid var(--gold-dim); border-radius:6px;
+  padding:8px 12px; margin-bottom:12px; background:rgba(198,161,91,.08);
+  font-family:'Caveat',cursive; font-size:16px; color:var(--burgundy);
+}
+
 @media (max-width:640px){
   .spread{ padding:8px; gap:1px; }
   .page{ padding:14px 12px 14px; font-size:13px; }
@@ -246,6 +277,45 @@ let pendingPhotos = [];
 let editPhotos = null;
 let currentUsername = '';
 let currentSalt = null;
+let leftTab = 'entries';
+
+const BADGES = [
+  { id: 'first', label: 'Первая запись', icon: '✍️', check: s => s.total >= 1 },
+  { id: 'streak3', label: '3 дня подряд', icon: '🔥', check: s => s.longestStreak >= 3 },
+  { id: 'streak7', label: 'Неделя подряд', icon: '🔥', check: s => s.longestStreak >= 7 },
+  { id: 'streak30', label: 'Месяц подряд', icon: '🏆', check: s => s.longestStreak >= 30 },
+  { id: 'ten', label: '10 записей', icon: '📚', check: s => s.total >= 10 },
+  { id: 'fifty', label: '50 записей', icon: '📖', check: s => s.total >= 50 },
+  { id: 'hundred', label: '100 записей', icon: '🏅', check: s => s.total >= 100 },
+  { id: 'night', label: 'Полуночник', icon: '🌙', check: s => s.hasNight },
+  { id: 'early', label: 'Ранняя пташка', icon: '🌅', check: s => s.hasEarly },
+  { id: 'long', label: 'Целый роман', icon: '📝', check: s => s.hasLong },
+  { id: 'photo', label: 'С фотографией', icon: '📷', check: s => s.hasPhoto }
+];
+
+function computeStats(){
+  const total = entries.length;
+  const daySet = new Set(entries.map(e => new Date(e.date).toDateString()));
+  const days = [...daySet].map(d => new Date(d)).sort((a,b)=>a-b);
+  let longest = 0, cur = 0, prevDay = null;
+  days.forEach(d=>{
+    cur = (prevDay && (d - prevDay) === 86400000) ? cur+1 : 1;
+    longest = Math.max(longest, cur);
+    prevDay = d;
+  });
+  const today = new Date(); today.setHours(0,0,0,0);
+  let currentStreak = 0;
+  let cursor = daySet.has(today.toDateString()) ? today : new Date(today.getTime() - 86400000);
+  while(daySet.has(cursor.toDateString())){
+    currentStreak++;
+    cursor = new Date(cursor.getTime() - 86400000);
+  }
+  const hasNight = entries.some(e => { const h = new Date(e.date).getHours(); return h>=0 && h<5; });
+  const hasEarly = entries.some(e => { const h = new Date(e.date).getHours(); return h>=5 && h<7; });
+  const hasLong = entries.some(e => (e.text||'').length > 500);
+  const hasPhoto = entries.some(e => e.photos && e.photos.length > 0);
+  return { total, longestStreak: longest, currentStreak, hasNight, hasEarly, hasLong, hasPhoto };
+}
 
 function b64FromBytes(bytes){
   let bin=''; const arr=new Uint8Array(bytes);
@@ -394,6 +464,7 @@ coverClick.addEventListener('click', ()=>{
 function openBook(){
   bookClosed.classList.add('hidden');
   bookOpen.classList.add('visible');
+  leftTab = 'entries';
   renderAll();
 }
 closeTab.addEventListener('click', ()=>{
@@ -450,6 +521,38 @@ function escapeHtml(s){
 }
 
 function renderLeft(){
+  const tabsHtml = `
+    <div class="left-tabs">
+      <button class="left-tab ${leftTab==='entries'?'active':''}" id="tabEntries">Записи</button>
+      <button class="left-tab ${leftTab==='progress'?'active':''}" id="tabProgress">Прогресс</button>
+    </div>
+  `;
+
+  if(leftTab === 'progress'){
+    const stats = computeStats();
+    const badgesHtml = BADGES.map(b=>{
+      const unlocked = b.check(stats);
+      return `<div class="badge ${unlocked?'unlocked':'locked'}">
+        <div class="badge-icon">${b.icon}</div>
+        <div class="badge-label">${b.label}</div>
+      </div>`;
+    }).join('');
+    pageLeft.innerHTML = `
+      ${tabsHtml}
+      <h2 class="index-head">Прогресс</h2>
+      <hr class="index-rule"/>
+      <div class="stat-row">
+        <div class="stat-box"><div class="stat-num">${stats.currentStreak}</div><div class="stat-label">дней подряд</div></div>
+        <div class="stat-box"><div class="stat-num">${stats.total}</div><div class="stat-label">всего записей</div></div>
+        <div class="stat-box"><div class="stat-num">${stats.longestStreak}</div><div class="stat-label">лучшая серия</div></div>
+      </div>
+      <div class="badge-grid">${badgesHtml}</div>
+    `;
+    document.getElementById('tabEntries').addEventListener('click', ()=>{ leftTab='entries'; renderLeft(); });
+    document.getElementById('tabProgress').addEventListener('click', ()=>{ leftTab='progress'; renderLeft(); });
+    return;
+  }
+
   const list = sortedEntries();
   const itemsHtml = list.length === 0
     ? `<p class="empty-index">Здесь появятся твои записи.</p>`
@@ -463,6 +566,7 @@ function renderLeft(){
         </li>`;
       }).join('')}</ul>`;
   pageLeft.innerHTML = `
+    ${tabsHtml}
     <h2 class="index-head">Оглавление</h2>
     <hr class="index-rule"/>
     ${itemsHtml}
@@ -476,6 +580,8 @@ function renderLeft(){
     </div>
     <p class="storage-note">Вход по логину «${escapeHtml(currentUsername)}» — можно открыть с любого устройства с этим же логином и PIN. Записи шифруются перед отправкой на сервер: без PIN их не прочитать, в том числе и тебе, если PIN забыт.</p>
   `;
+  document.getElementById('tabEntries').addEventListener('click', ()=>{ leftTab='entries'; renderLeft(); });
+  document.getElementById('tabProgress').addEventListener('click', ()=>{ leftTab='progress'; renderLeft(); });
   document.getElementById('logoutBtn').addEventListener('click', ()=>{
     if(!confirm('Выйти? Записи останутся на сервере, войти снова можно тем же логином и PIN.')) return;
     cryptoKey = null; entries = []; currentId = null; currentUsername=''; currentSalt=null;
@@ -549,10 +655,19 @@ function renderRight(){
   if(currentId === null){
     const today = new Date();
     const { date, weekday } = fmtDate(today.toISOString());
+    const stats = computeStats();
+    const daySet = new Set(entries.map(e => new Date(e.date).toDateString()));
+    const wroteToday = daySet.has(today.toDateString());
+    const streakText = wroteToday
+      ? `🔥 Сегодня уже писала — серия ${stats.currentStreak} дн.`
+      : (stats.currentStreak > 0
+          ? `🔥 Серия ${stats.currentStreak} дн. — напиши сегодня, чтобы не прерывать`
+          : `Начни серию сегодня — уже завтра будет 2 дня подряд`);
     pageRight.innerHTML = `
       <div class="rpage-inner">
         <p class="rdate">${date}</p>
         <p class="rweekday">${weekday}</p>
+        <div class="streak-banner">${streakText}</div>
         <textarea class="entry-text" id="newText" placeholder="О чём хочешь написать сегодня?"></textarea>
         <div class="photo-add-row">
           <input type="file" id="newPhotoInput" accept="image/*" multiple style="display:none;">
