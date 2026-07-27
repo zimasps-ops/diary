@@ -117,7 +117,13 @@ body{
 
 .index-head{ font-family:'Playfair Display',serif; font-size:19px; color:var(--ink); margin:0 0 4px; }
 .index-rule{ border:none; border-top:1px solid var(--rule); margin:8px 0 14px; }
-.entry-list{ list-style:none; margin:0; padding:0; }
+.entry-list{ list-style:none; margin:0 0 14px; padding:0; }
+.month-heading{
+  font-family:'Playfair Display',serif; font-size:13px; color:var(--gold-dim);
+  text-transform:capitalize; letter-spacing:.5px; margin:16px 0 6px; padding-bottom:4px;
+  border-bottom:1px solid var(--rule);
+}
+.month-heading:first-of-type{ margin-top:0; }
 .entry-item{ cursor:pointer; padding:6px 4px; border-radius:3px; color:var(--ink-soft); line-height:1.35; }
 .entry-item:hover{ background:rgba(122,34,51,.07); }
 .entry-item.active{ background:rgba(122,34,51,.12); color:var(--burgundy); }
@@ -556,15 +562,29 @@ function renderLeft(){
   const list = sortedEntries();
   const itemsHtml = list.length === 0
     ? `<p class="empty-index">Здесь появятся твои записи.</p>`
-    : `<ul class="entry-list">${list.map(e=>{
-        const { date } = fmtDate(e.date);
-        const preview = (e.text || '').trim().slice(0,40).replace(/\n/g,' ');
-        const photoTag = (e.photos && e.photos.length) ? ' 📎' : '';
-        return `<li class="entry-item ${e.id===currentId?'active':''}" data-id="${e.id}">
-          <span class="entry-date">${date}${photoTag}</span>
-          <span class="entry-preview">${preview ? escapeHtml(preview) + (e.text.length>40?'…':'') : 'без текста'}</span>
-        </li>`;
-      }).join('')}</ul>`;
+    : (()=>{
+        let html = '';
+        let lastMonthKey = null;
+        list.forEach(e=>{
+          const d = new Date(e.date);
+          const mKey = d.getFullYear() + '-' + d.getMonth();
+          if(mKey !== lastMonthKey){
+            if(lastMonthKey !== null) html += `</ul>`;
+            const monthLabel = d.toLocaleDateString('ru-RU', { month:'long', year:'numeric' });
+            html += `<div class="month-heading">${monthLabel}</div><ul class="entry-list">`;
+            lastMonthKey = mKey;
+          }
+          const { date } = fmtDate(e.date);
+          const preview = (e.text || '').trim().slice(0,40).replace(/\n/g,' ');
+          const photoTag = (e.photos && e.photos.length) ? ' 📎' : '';
+          html += `<li class="entry-item ${e.id===currentId?'active':''}" data-id="${e.id}">
+            <span class="entry-date">${date}${photoTag}</span>
+            <span class="entry-preview">${preview ? escapeHtml(preview) + (e.text.length>40?'…':'') : 'без текста'}</span>
+          </li>`;
+        });
+        html += `</ul>`;
+        return html;
+      })();
   pageLeft.innerHTML = `
     ${tabsHtml}
     <h2 class="index-head">Оглавление</h2>
