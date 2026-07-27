@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Дела</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Caveat:wght@500;600&family=EB+Garamond:ital@0;1&display=swap');
+
+:root{
+  --leather-1:#0f2d24; --leather-2:#0a1f19; --gold:#c6a15b; --gold-dim:#9a7d43;
+  --paper:#f7efd9; --ink:#2b2415; --ink-soft:#5b5138; --rule:#d9c99a; --burgundy:#7a2233; --green:#2f6b45;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(ellipse at center, #2a2420 0%, #14110e 100%);
+  font-family:'EB Garamond', serif; padding:24px 12px;
+}
+.stage{ perspective:2400px; width:100%; max-width:920px; }
+.scene{ position:relative; width:100%; min-height:70vh; }
+
+.book-closed{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  transition:opacity .5s ease .3s, transform .5s ease .3s;
+}
+.book-closed.hidden{ opacity:0; pointer-events:none; transform:scale(.92); position:absolute; }
+
+.cover{
+  position:relative; width:min(58%,340px); aspect-ratio:3/4;
+  border-radius:4px 10px 10px 4px;
+  background:linear-gradient(135deg, var(--leather-1), var(--leather-2));
+  box-shadow:0 30px 60px rgba(0,0,0,.55), inset -8px 0 20px rgba(0,0,0,.4), inset 0 0 0 1px rgba(198,161,91,.15);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:24px; cursor:pointer; overflow:hidden;
+}
+.cover::before{
+  content:''; position:absolute; inset:14px;
+  border:1px solid rgba(198,161,91,.35); border-radius:2px 7px 7px 2px; pointer-events:none;
+}
+.cover-mark{
+  width:52px; height:52px; border:1.5px solid var(--gold-dim); border-radius:50%;
+  display:flex; align-items:center; justify-content:center; color:var(--gold);
+  font-family:'Playfair Display',serif; font-size:22px; margin-bottom:18px;
+}
+.cover-title{
+  font-family:'Playfair Display', serif; font-weight:700; font-size:clamp(24px,4vw,34px);
+  color:var(--gold); letter-spacing:2px; margin:0; text-align:center;
+}
+.cover-sub{ font-family:'Caveat', cursive; color:var(--gold-dim); font-size:17px; margin:10px 0 0; text-align:center; }
+
+.pin-panel{ margin-top:22px; width:100%; display:flex; flex-direction:column; align-items:center; gap:10px; }
+.pin-input{
+  width:75%; text-align:center; font-size:16px;
+  background:rgba(247,239,217,.08); border:1px solid var(--gold-dim); color:var(--paper);
+  border-radius:6px; padding:8px 10px; font-family:'EB Garamond',serif;
+}
+.pin-input:focus{ outline:none; border-color:var(--gold); }
+.pin-btn{
+  background:transparent; border:1px solid var(--gold); color:var(--gold);
+  padding:7px 18px; border-radius:5px; font-family:'EB Garamond',serif; font-size:14.5px; cursor:pointer;
+}
+.pin-btn:hover{ background:rgba(198,161,91,.12); }
+.pin-error{ color:#e08a8a; font-size:13px; min-height:16px; text-align:center; }
+.pin-hint{ color:var(--gold-dim); font-size:12.5px; opacity:.85; text-align:center; max-width:85%; }
+.pin-link{ background:none; border:none; color:var(--gold-dim); font-size:12.5px; text-decoration:underline; cursor:pointer; margin-top:4px; }
+
+.book-open{
+  position:absolute; inset:0; display:flex; opacity:0; transform:scale(.96);
+  pointer-events:none; transition:opacity .5s ease .3s, transform .5s ease .3s;
+}
+.book-open.visible{ opacity:1; transform:scale(1); pointer-events:auto; }
+.spread{
+  position:relative; width:100%; display:flex; border-radius:6px; overflow:hidden;
+  box-shadow:0 30px 70px rgba(0,0,0,.55); background:var(--leather-2); padding:14px; gap:2px;
+}
+.page{
+  position:relative; flex:1;
+  background:repeating-linear-gradient(transparent, transparent 27px, var(--rule) 28px), var(--paper);
+  background-position:0 46px; padding:26px 22px 20px; overflow-y:auto; min-height:0; max-height:78vh;
+}
+.page-left{ border-radius:3px 0 0 3px; box-shadow:inset -14px 0 24px -14px rgba(0,0,0,.35); }
+.page-right{ border-radius:0 3px 3px 0; box-shadow:inset 14px 0 24px -14px rgba(0,0,0,.35); }
+.spine-shadow{
+  position:absolute; top:14px; bottom:14px; left:50%; width:26px; transform:translateX(-50%);
+  background:linear-gradient(90deg, rgba(0,0,0,.18), rgba(0,0,0,0) 40%, rgba(0,0,0,0) 60%, rgba(0,0,0,.18));
+  pointer-events:none; z-index:3;
+}
+.close-tab{
+  position:absolute; top:-2px; right:26px; background:var(--burgundy); color:var(--paper);
+  font-family:'Caveat',cursive; font-size:15px; padding:6px 14px 8px; border-radius:0 0 6px 6px;
+  cursor:pointer; box-shadow:0 3px 6px rgba(0,0,0,.3); z-index:5; border:none;
+}
+.close-tab:hover{ filter:brightness(1.1); }
+
+.left-tabs{ display:flex; gap:6px; margin-bottom:10px; }
+.left-tab{
+  background:transparent; border:1px solid var(--rule); color:var(--ink-soft);
+  font-family:'EB Garamond',serif; font-size:12.5px; padding:5px 10px; border-radius:4px 4px 0 0; cursor:pointer;
+}
+.left-tab.active{ background:rgba(122,34,51,.1); border-color:var(--burgundy); color:var(--burgundy); }
+
+.index-head{ font-family:'Playfair Display',serif; font-size:19px; color:var(--ink); margin:0 0 4px; }
+.index-rule{ border:none; border-top:1px solid var(--rule); margin:8px 0 14px; }
+.empty-index{ color:var(--ink-soft); font-style:italic; font-size:14.5px; opacity:.75; }
+
+.cat-item{
+  display:flex; justify-content:space-between; align-items:center; gap:8px;
+  padding:9px 10px; border:1px solid var(--rule); border-radius:6px; margin-bottom:8px; cursor:pointer;
+  background:rgba(255,255,255,.3);
+}
+.cat-item:hover{ background:rgba(122,34,51,.06); }
+.cat-item.active{ border-color:var(--burgundy); background:rgba(122,34,51,.1); }
+.cat-name{ font-size:15px; color:var(--ink); }
+.cat-count{ font-size:12.5px; color:var(--ink-soft); white-space:nowrap; }
+
+.new-cat-row{ display:flex; gap:6px; margin-top:10px; }
+.new-cat-row input{
+  flex:1; border:1px solid var(--rule); border-radius:5px; padding:7px 9px;
+  font-family:'EB Garamond',serif; font-size:14px; background:rgba(255,255,255,.5); color:var(--ink);
+}
+.new-cat-row input:focus{ outline:none; border-color:var(--gold-dim); }
+.new-cat-row button{
+  border:1px solid var(--burgundy); color:var(--burgundy); background:transparent;
+  border-radius:5px; padding:0 12px; font-family:'EB Garamond',serif; font-size:14px; cursor:pointer;
+}
+
+.side-links{ margin-top:18px; padding-top:12px; border-top:1px solid var(--rule); display:flex; flex-direction:column; gap:6px; }
+.side-link{ background:none; border:none; color:var(--ink-soft); font-size:12.5px; text-decoration:underline; cursor:pointer; text-align:left; padding:0; }
+.storage-note{ color:var(--ink-soft); font-size:11.5px; opacity:.75; margin-top:18px; line-height:1.4; }
+
+.rpage-inner{ display:flex; flex-direction:column; min-height:100%; }
+.rtitle{ font-family:'Playfair Display',serif; font-size:19px; color:var(--ink); margin:0 0 4px; display:flex; justify-content:space-between; align-items:center; }
+.rtitle-del{ background:none; border:none; color:var(--ink-soft); font-size:12px; text-decoration:underline; cursor:pointer; }
+.rprogress{ font-size:12.5px; color:var(--ink-soft); margin-bottom:14px; }
+
+.task-item{ display:flex; align-items:flex-start; gap:8px; padding:7px 2px; border-bottom:1px solid var(--rule); }
+.task-check{
+  width:18px; height:18px; border:1.5px solid var(--gold-dim); border-radius:4px; flex-shrink:0;
+  cursor:pointer; margin-top:3px; display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--green);
+}
+.task-check.done{ background:rgba(47,107,69,.15); border-color:var(--green); }
+.task-text{ flex:1; font-size:15px; color:var(--ink); cursor:pointer; word-break:break-word; }
+.task-text.done{ text-decoration:line-through; color:var(--ink-soft); opacity:.7; }
+.task-del{ background:none; border:none; color:var(--ink-soft); font-size:16px; cursor:pointer; flex-shrink:0; }
+
+.add-task-row{ display:flex; gap:6px; margin-top:14px; }
+.add-task-row input{
+  flex:1; border:1px solid var(--rule); border-radius:5px; padding:8px 10px;
+  font-family:'EB Garamond',serif; font-size:14.5px; background:rgba(255,255,255,.5); color:var(--ink);
+}
+.add-task-row input:focus{ outline:none; border-color:var(--gold-dim); }
+.add-task-row button{
+  border:1px solid var(--burgundy); color:var(--burgundy); background:transparent;
+  border-radius:5px; padding:0 14px; font-family:'EB Garamond',serif; font-size:15px; cursor:pointer;
+}
+.help-text{ font-size:14px; line-height:1.55; color:var(--ink-soft); }
+.help-text p{ margin:0 0 12px; }
+.help-text strong{ color:var(--ink); }
+
+@media (max-width:640px){
+  .spread{ padding:8px; gap:1px; }
+  .page{ padding:14px 12px 14px; font-size:13px; }
+  .spine-shadow{ width:14px; }
+  .cover-title{ font-size:22px; }
+}
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="scene">
+    <div class="book-closed" id="bookClosed">
+      <div class="cover" id="coverClick">
+        <div class="cover-mark">✓</div>
+        <h1 class="cover-title">Дела</h1>
+        <p class="cover-sub" id="coverSub">по категориям</p>
+        <div class="pin-panel" id="pinPanel" style="display:none;"></div>
+      </div>
+    </div>
+    <div class="book-open" id="bookOpen">
+      <div class="spread" id="spread">
+        <button class="close-tab" id="closeTab">закрыть</button>
+        <div class="page page-left" id="pageLeft"></div>
+        <div class="spine-shadow"></div>
+        <div class="page page-right" id="pageRight"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const bookClosed = document.getElementById('bookClosed');
+const bookOpen = document.getElementById('bookOpen');
+const closeTab = document.getElementById('closeTab');
+const pageLeft = document.getElementById('pageLeft');
+const pageRight = document.getElementById('pageRight');
+const spread = document.getElementById('spread');
+const coverClick = document.getElementById('coverClick');
+const coverSub = document.getElementById('coverSub');
+const pinPanel = document.getElementById('pinPanel');
+
+const API_BASE = 'https://todo-sync.zimasps.workers.dev';
+
+let cryptoKey = null;
+let categories = [];
+let tasks = [];
+let currentUsername = '';
+let currentSalt = null;
+let leftTab = 'categories';
+let selectedCategoryId = null;
+
+function uid(){ return 'x' + Date.now() + Math.random().toString(36).slice(2,7); }
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function b64FromBytes(bytes){
+  let bin=''; const arr=new Uint8Array(bytes);
+  for(let i=0;i<arr.length;i++) bin += String.fromCharCode(arr[i]);
+  return btoa(bin);
+}
+function bytesFromB64(b64){
+  const bin=atob(b64); const bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+  return bytes;
+}
+async function deriveKey(pin, saltBytes){
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pin), {name:'PBKDF2'}, false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name:'PBKDF2', salt: saltBytes, iterations: 150000, hash:'SHA-256' },
+    keyMaterial, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']
+  );
+}
+async function encryptJSON(key, obj){
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const data = new TextEncoder().encode(JSON.stringify(obj));
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, data);
+  return { iv: b64FromBytes(iv), ct: b64FromBytes(ct) };
+}
+async function decryptJSON(key, ivB64, ctB64){
+  const iv = bytesFromB64(ivB64);
+  const ct = bytesFromB64(ctB64);
+  const buf = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ct);
+  return JSON.parse(new TextDecoder().decode(buf));
+}
+function hasCrypto(){ return !!(window.crypto && window.crypto.subtle); }
+
+async function fetchAccount(username){
+  const res = await fetch(`${API_BASE}/todo?user=${encodeURIComponent(username)}`);
+  if(res.status === 404) return null;
+  if(!res.ok) throw new Error('network');
+  return res.json();
+}
+async function pushAccount(payload){
+  const res = await fetch(`${API_BASE}/todo`, {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+  });
+  if(!res.ok) throw new Error('network');
+  return res.json();
+}
+
+function renderLoginForm(){
+  coverSub.textContent = 'войди или создай';
+  pinPanel.style.display = 'flex';
+  const savedUser = localStorage.getItem('todo_username') || '';
+  pinPanel.innerHTML = `
+    <input class="pin-input" type="text" autocapitalize="off" autocorrect="off" maxlength="30" id="loginUser" placeholder="логин" value="${savedUser}">
+    <input class="pin-input" type="password" inputmode="text" maxlength="20" id="loginPin" placeholder="PIN">
+    <button class="pin-btn" id="loginBtn">Войти</button>
+    <p class="pin-error" id="pinErr"></p>
+    <p class="pin-hint">Если такого логина ещё нет — предложим создать новый.</p>
+  `;
+  const tryLogin = async ()=>{
+    const user = document.getElementById('loginUser').value.trim().toLowerCase();
+    const pin = document.getElementById('loginPin').value.trim();
+    const err = document.getElementById('pinErr');
+    err.textContent = '';
+    if(!user){ err.textContent = 'Введи логин'; return; }
+    if(pin.length < 4){ err.textContent = 'PIN — минимум 4 символа'; return; }
+    err.textContent = 'Проверяю…';
+    try{
+      const account = await fetchAccount(user);
+      if(account === null){ renderConfirmCreate(user, pin); return; }
+      const salt = bytesFromB64(account.salt);
+      const key = await deriveKey(pin, salt);
+      await decryptJSON(key, account.checkIv, account.checkCt);
+      const data = await decryptJSON(key, account.dataIv, account.dataCt);
+      cryptoKey = key; currentUsername = user; currentSalt = salt;
+      categories = data.categories || [];
+      tasks = data.tasks || [];
+      localStorage.setItem('todo_username', user);
+      openBook();
+    }catch(e){
+      err.textContent = e.message === 'network' ? 'Нет связи с сервером' : 'Неверный PIN';
+    }
+  };
+  document.getElementById('loginBtn').addEventListener('click', tryLogin);
+  pinPanel.querySelectorAll('.pin-input').forEach(inp=>{
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter') tryLogin(); });
+  });
+}
+
+function renderConfirmCreate(user, pin){
+  coverSub.textContent = 'такого логина ещё нет';
+  pinPanel.innerHTML = `
+    <p class="pin-hint">Логин «${escapeHtml(user)}» свободен — создадим новый. Введи PIN ещё раз.</p>
+    <input class="pin-input" type="password" maxlength="20" id="pinConfirm" placeholder="повтори PIN">
+    <button class="pin-btn" id="confirmBtn">Создать</button>
+    <button class="pin-link" id="backBtn">Назад</button>
+    <p class="pin-error" id="pinErr"></p>
+  `;
+  document.getElementById('confirmBtn').addEventListener('click', async ()=>{
+    const err = document.getElementById('pinErr');
+    const pin2 = document.getElementById('pinConfirm').value.trim();
+    if(pin2 !== pin){ err.textContent = 'PIN не совпадает'; return; }
+    err.textContent = 'Создаю…';
+    try{
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const key = await deriveKey(pin, salt);
+      const check = await encryptJSON(key, {ok:true});
+      const data = await encryptJSON(key, {categories:[], tasks:[]});
+      await pushAccount({
+        user, salt: b64FromBytes(salt),
+        checkIv: check.iv, checkCt: check.ct, dataIv: data.iv, dataCt: data.ct
+      });
+      cryptoKey = key; currentUsername = user; currentSalt = salt; categories = []; tasks = [];
+      localStorage.setItem('todo_username', user);
+      openBook();
+    }catch(e){
+      err.textContent = 'Нет связи с сервером, попробуй снова.';
+    }
+  });
+  document.getElementById('backBtn').addEventListener('click', renderLoginForm);
+}
+
+coverClick.addEventListener('click', ()=>{
+  if(pinPanel.style.display === 'flex') return;
+  if(!hasCrypto()){
+    coverSub.textContent = 'браузер не поддерживает защищённое хранение';
+    return;
+  }
+  renderLoginForm();
+});
+
+function openBook(){
+  bookClosed.classList.add('hidden');
+  bookOpen.classList.add('visible');
+  leftTab = 'categories'; selectedCategoryId = categories[0] ? categories[0].id : null;
+  renderAll();
+}
+closeTab.addEventListener('click', ()=>{
+  bookOpen.classList.remove('visible');
+  bookClosed.classList.remove('hidden');
+  pinPanel.style.display = 'none'; pinPanel.innerHTML = '';
+  coverSub.textContent = 'по категориям';
+  cryptoKey=null; categories=[]; tasks=[]; currentUsername=''; currentSalt=null;
+});
+
+async function saveData(){
+  const check = await encryptJSON(cryptoKey, {ok:true});
+  const data = await encryptJSON(cryptoKey, {categories, tasks});
+  await pushAccount({
+    user: currentUsername, salt: b64FromBytes(currentSalt),
+    checkIv: check.iv, checkCt: check.ct, dataIv: data.iv, dataCt: data.ct
+  });
+}
+
+function tasksFor(catId){ return tasks.filter(t=>t.categoryId===catId); }
+
+function renderLeft(){
+  const tabsHtml = `
+    <div class="left-tabs">
+      <button class="left-tab ${leftTab==='categories'?'active':''}" id="tabCats">Категории</button>
+      <button class="left-tab ${leftTab==='help'?'active':''}" id="tabHelp">Как это работает</button>
+    </div>
+  `;
+
+  if(leftTab === 'help'){
+    pageLeft.innerHTML = `
+      ${tabsHtml}
+      <h2 class="index-head">Конфиденциально</h2>
+      <hr class="index-rule"/>
+      <div class="help-text">
+        <p><strong>Всё зашифровано.</strong> Категории и задачи шифруются в этом браузере перед отправкой на сервер — без PIN их не прочитать, в том числе и мне.</p>
+        <p><strong>Вход по логину и PIN.</strong> Можно открыть с любого устройства.</p>
+        <p><strong>Категории</strong> — каждая со своим списком задач. Нажми на категорию слева, чтобы увидеть и отметить дела справа.</p>
+      </div>
+    `;
+    wireTabs();
+    return;
+  }
+
+  const catsHtml = categories.length === 0
+    ? `<p class="empty-index">Пока нет ни одной категории.</p>`
+    : categories.map(c=>{
+        const list = tasksFor(c.id);
+        const done = list.filter(t=>t.done).length;
+        return `<div class="cat-item ${c.id===selectedCategoryId?'active':''}" data-id="${c.id}">
+          <span class="cat-name">${escapeHtml(c.name)}</span>
+          <span class="cat-count">${done}/${list.length}</span>
+        </div>`;
+      }).join('');
+
+  pageLeft.innerHTML = `
+    ${tabsHtml}
+    <h2 class="index-head">Категории</h2>
+    <hr class="index-rule"/>
+    ${catsHtml}
+    <div class="new-cat-row">
+      <input type="text" id="newCatInput" placeholder="новая категория">
+      <button id="addCatBtn">+</button>
+    </div>
+    <div class="side-links">
+      <button class="side-link" id="logoutBtn">Выйти из аккаунта</button>
+    </div>
+    <p class="storage-note">Вход по логину «${escapeHtml(currentUsername)}». Всё шифруется перед отправкой на сервер.</p>
+  `;
+  wireTabs();
+  document.querySelectorAll('.cat-item').forEach(el=>{
+    el.addEventListener('click', ()=>{ selectedCategoryId = el.dataset.id; renderAll(); });
+  });
+  const addCat = async ()=>{
+    const input = document.getElementById('newCatInput');
+    const name = input.value.trim();
+    if(!name) return;
+    const cat = { id: uid(), name };
+    categories.push(cat);
+    selectedCategoryId = cat.id;
+    await saveData();
+    renderAll();
+  };
+  document.getElementById('addCatBtn').addEventListener('click', addCat);
+  document.getElementById('newCatInput').addEventListener('keydown', e=>{ if(e.key==='Enter') addCat(); });
+  document.getElementById('logoutBtn').addEventListener('click', ()=>{
+    if(!confirm('Выйти? Данные останутся на сервере, войти снова можно тем же логином и PIN.')) return;
+    closeTab.click();
+  });
+}
+
+function renderRight(){
+  if(leftTab === 'help' || !categories.length){
+    pageRight.innerHTML = `
+      <div class="rpage-inner">
+        <p class="rtitle">Начни с категории</p>
+        <p class="empty-index">Создай категорию слева (например «Работа» или «Дом»), и здесь появится список дел для неё.</p>
+      </div>
+    `;
+    return;
+  }
+  const cat = categories.find(c=>c.id===selectedCategoryId) || categories[0];
+  selectedCategoryId = cat.id;
+  const list = tasksFor(cat.id).sort((a,b)=> (a.done - b.done) || (a.createdAt - b.createdAt));
+  const done = list.filter(t=>t.done).length;
+
+  const tasksHtml = list.length === 0
+    ? `<p class="empty-index">Пока пусто — добавь первое дело ниже.</p>`
+    : list.map(t=>`
+        <div class="task-item" data-id="${t.id}">
+          <div class="task-check ${t.done?'done':''}" data-toggle="${t.id}">${t.done?'✓':''}</div>
+          <div class="task-text ${t.done?'done':''}" data-toggle="${t.id}">${escapeHtml(t.text)}</div>
+          <button class="task-del" data-del="${t.id}">×</button>
+        </div>
+      `).join('');
+
+  pageRight.innerHTML = `
+    <div class="rpage-inner">
+      <p class="rtitle">${escapeHtml(cat.name)} <button class="rtitle-del" id="delCatBtn">удалить категорию</button></p>
+      <p class="rprogress">${done} из ${list.length} сделано</p>
+      ${tasksHtml}
+      <div class="add-task-row">
+        <input type="text" id="newTaskInput" placeholder="новое дело">
+        <button id="addTaskBtn">+</button>
+      </div>
+    </div>
+  `;
+  pageRight.querySelectorAll('[data-toggle]').forEach(el=>{
+    el.addEventListener('click', async ()=>{
+      const t = tasks.find(x=>x.id===el.dataset.toggle);
+      t.done = !t.done;
+      await saveData();
+      renderAll();
+    });
+  });
+  pageRight.querySelectorAll('[data-del]').forEach(el=>{
+    el.addEventListener('click', async ()=>{
+      tasks = tasks.filter(t=>t.id!==el.dataset.del);
+      await saveData();
+      renderAll();
+    });
+  });
+  document.getElementById('delCatBtn').addEventListener('click', async ()=>{
+    if(!confirm(`Удалить категорию «${cat.name}» и все её дела?`)) return;
+    tasks = tasks.filter(t=>t.categoryId!==cat.id);
+    categories = categories.filter(c=>c.id!==cat.id);
+    selectedCategoryId = categories[0] ? categories[0].id : null;
+    await saveData();
+    renderAll();
+  });
+  const addTask = async ()=>{
+    const input = document.getElementById('newTaskInput');
+    const text = input.value.trim();
+    if(!text) return;
+    tasks.push({ id: uid(), categoryId: cat.id, text, done:false, createdAt: Date.now() });
+    await saveData();
+    renderAll();
+  };
+  document.getElementById('addTaskBtn').addEventListener('click', addTask);
+  document.getElementById('newTaskInput').addEventListener('keydown', e=>{ if(e.key==='Enter') addTask(); });
+}
+
+function wireTabs(){
+  document.getElementById('tabCats').addEventListener('click', ()=>{ leftTab='categories'; renderAll(); });
+  document.getElementById('tabHelp').addEventListener('click', ()=>{ leftTab='help'; renderAll(); });
+}
+
+function renderAll(){ renderLeft(); renderRight(); }
+</script>
+</body>
+</html>
