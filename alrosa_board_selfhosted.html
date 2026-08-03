@@ -1,0 +1,948 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Беговой клуб АЛРОСА</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=PT+Sans:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap&subset=cyrillic" rel="stylesheet">
+<style>
+  :root{
+    --bg: #141517;
+    --bg-elevated: #1c1e21;
+    --bg-input: #232528;
+    --text: #eae7e0;
+    --text-dim: #8b8f93;
+    --line: #313438;
+    --rain: #5b7280;
+    --amber: #d3944f;
+    --red: #c0392b;
+    --blue: #3b7ab5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'PT Sans', sans-serif;
+    min-height: 100vh;
+    padding: 24px 16px 80px;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; }
+
+  /* header */
+  .header { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+  .logo { flex-shrink: 0; }
+  .header-text .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--rain);
+    margin-bottom: 3px;
+  }
+  h1 {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-size: 26px;
+    margin: 0;
+    line-height: 1.05;
+  }
+  .subtitle { color: var(--text-dim); font-size: 13px; margin: 14px 0 20px; }
+  .notice {
+    font-size: 12px;
+    color: var(--text-dim);
+    background: var(--bg-elevated);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 20px;
+  }
+
+  /* identity */
+  .identity {
+    background: var(--bg-elevated);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 22px;
+  }
+  .identity-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+  .identity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .add-city-row { display: flex; gap: 8px; margin-top: 8px; }
+  .add-city-row input { flex: 1; }
+
+  input[type=text], input[type=number], input[type=date], select, textarea {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 9px 10px;
+    font-family: 'PT Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+  }
+  input::placeholder, textarea::placeholder { color: #5c5f63; }
+  input:focus, select:focus, textarea:focus { border-color: var(--rain); }
+  textarea { resize: none; min-height: 40px; }
+
+  button {
+    font-family: 'Oswald', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 6px;
+    padding: 9px 14px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button:hover { opacity: 0.85; }
+  .btn-primary { background: var(--rain); color: #0d1113; font-weight: 600; }
+  .btn-amber { background: var(--amber); color: #1a1206; font-weight: 600; }
+  .btn-ghost { background: transparent; border: 1px solid var(--line); color: var(--text-dim); padding: 6px 10px; font-size: 11px; }
+  .btn-ghost:hover { color: var(--text); border-color: var(--rain); }
+  .btn-chip {
+    background: var(--bg-input); border: 1px solid var(--line); color: var(--text-dim);
+    padding: 6px 12px; font-size: 11px; border-radius: 100px; cursor: pointer;
+  }
+  .btn-chip.active { background: var(--rain); color: #0d1113; border-color: var(--rain); font-weight: 600; }
+
+  /* tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 18px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .tab {
+    font-family: 'Oswald', sans-serif;
+    font-size: 12.5px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 9px 12px;
+    color: var(--text-dim);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    user-select: none;
+  }
+  .tab.active { color: var(--text); border-color: var(--amber); }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .card-title { font-family: 'Oswald', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
+
+  .period-toggle { display: flex; gap: 6px; margin-bottom: 14px; }
+
+  /* leaderboard rows */
+  .rank-row {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .rank-row:last-child { border-bottom: none; }
+  .rank-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .rank-row.gold .rank-num { color: transparent; background: linear-gradient(90deg, var(--red), var(--blue)); -webkit-background-clip: text; background-clip: text; font-weight: 700; }
+  .rank-main { min-width: 0; }
+  .rank-name { font-weight: 700; font-size: 14px; }
+  .rank-bar-track { height: 5px; background: var(--bg-input); border-radius: 4px; margin-top: 6px; overflow: hidden; }
+  .rank-bar-fill { height: 100%; background: var(--rain); border-radius: 4px; }
+  .rank-row.gold .rank-bar-fill { background: linear-gradient(90deg, var(--red), var(--blue)); }
+  .rank-km { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--amber); white-space: nowrap; }
+
+  /* run feed */
+  .run-row {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .run-row:last-child { border-bottom: none; }
+  .run-top { display: flex; justify-content: space-between; gap: 8px; }
+  .run-name { font-weight: 700; }
+  .run-city { color: var(--rain); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .run-km { font-family: 'JetBrains Mono', monospace; color: var(--amber); font-weight: 700; }
+  .run-note { color: var(--text-dim); margin-top: 3px; }
+  .run-date { color: #5c5f63; font-family: 'JetBrains Mono', monospace; font-size: 11px; margin-top: 3px; }
+  .run-actions { display: flex; gap: 6px; margin-top: 6px; }
+  .photo-label {
+    display: inline-block;
+    font-size: 12.5px;
+    color: var(--rain);
+    cursor: pointer;
+    border: 1px dashed var(--line);
+    border-radius: 6px;
+    padding: 7px 10px;
+    width: 100%;
+    text-align: center;
+  }
+  .photo-label:hover { border-color: var(--rain); }
+  .run-photo-thumb {
+    max-width: 100%;
+    max-height: 260px;
+    border-radius: 8px;
+    margin-top: 8px;
+    border: 1px solid var(--line);
+    display: block;
+  }
+  .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+  .edit-row-bottom { display: flex; gap: 8px; margin-top: 6px; }
+  .edit-row-bottom textarea { flex: 1; }
+
+  /* challenge cards */
+  .challenge-card { }
+  .challenge-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 4px; }
+  .challenge-title { font-family: 'Oswald', sans-serif; font-size: 17px; font-weight: 600; }
+  .status-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+  .status-active { background: var(--amber); color: #1a1206; }
+  .status-upcoming { background: var(--bg-input); color: var(--rain); border: 1px solid var(--rain); }
+  .status-finished { background: var(--bg-input); color: var(--text-dim); border: 1px solid var(--line); }
+  .challenge-dates { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-dim); margin-bottom: 12px; }
+
+  .new-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .city-checks { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+
+  .empty { text-align: center; color: var(--text-dim); font-size: 13px; padding: 24px 10px; border: 1px dashed var(--line); border-radius: 8px; }
+
+  @media (max-width: 480px) {
+    .identity-grid, .new-form-grid { grid-template-columns: 1fr; }
+    h1 { font-size: 21px; }
+  }
+
+  /* login gate */
+  #login-gate {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  .login-card {
+    width: 100%;
+    max-width: 360px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 28px 24px;
+  }
+  .login-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .login-sub {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-bottom: 20px;
+    line-height: 1.4;
+  }
+  .login-field { margin-bottom: 12px; }
+  .login-field label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .login-error {
+    color: var(--amber);
+    font-size: 12.5px;
+    margin: 10px 0 0;
+    min-height: 16px;
+  }
+  .login-hint {
+    color: var(--text-dim);
+    font-size: 11.5px;
+    margin-top: 16px;
+    line-height: 1.4;
+  }
+  #app-content { display: none; }
+  .logout-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 8px;
+  }
+</style>
+</head>
+<body>
+<div id="login-gate">
+  <div class="login-card">
+    <div class="login-title">Вход в клуб</div>
+    <div class="login-sub">Придумай логин и PIN при первом входе — дальше входи теми же данными.</div>
+    <div class="login-field">
+      <label for="login-input">Логин</label>
+      <input type="text" id="login-input" placeholder="Например, oleg_mirny" autocomplete="username" />
+    </div>
+    <div class="login-field">
+      <label for="pin-input">PIN (4–6 цифр)</label>
+      <input type="password" id="pin-input" placeholder="••••" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" />
+    </div>
+    <button class="btn-primary" id="btn-login" style="width:100%;">Войти</button>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-hint">Если логина ещё нет — он создастся автоматически с этим PIN. Если есть — PIN должен совпасть.</div>
+  </div>
+</div>
+
+<div id="app-content">
+<div class="wrap">
+
+  <div class="logout-row">
+    <button class="btn-ghost" id="btn-logout">Выйти</button>
+  </div>
+
+  <div class="header">
+    <svg class="logo" width="46" height="46" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <polyline points="5,175 25,175 100,15 175,175 195,175" fill="none" stroke="#c0392b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <polyline points="23,175 40,175 100,28 160,175 177,175" fill="none" stroke="#ae4258" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <polyline points="41,175 55,175 100,41 145,175 159,175" fill="none" stroke="#8c4f72" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <polyline points="59,175 70,175 100,54 130,175 141,175" fill="none" stroke="#5f5f8c" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <polyline points="77,175 85,175 100,67 115,175 123,175" fill="none" stroke="#3b7ab5" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="header-text">
+      <div class="eyebrow">многогородской формат</div>
+      <h1>Беговой клуб АЛРОСА</h1>
+    </div>
+  </div>
+  <p class="subtitle">Города, километры, рейтинги и челленджи — всё на одной доске.</p>
+  <div class="notice">Все записи общие: города, пробежки, рейтинги и челленджи видит весь клуб.</div>
+
+  <div class="identity">
+    <div class="identity-title">Мой профиль</div>
+    <div class="identity-grid">
+      <input type="text" id="my-name" placeholder="Твоё имя" />
+      <select id="my-city"><option value="">Выбери город</option></select>
+    </div>
+    <div class="add-city-row">
+      <input type="text" id="new-city" placeholder="Нет своего города? Добавь его" />
+      <button class="btn-ghost" id="btn-add-city">Добавить город</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="runs">Пробежки</div>
+    <div class="tab" data-tab="cities">Города</div>
+    <div class="tab" data-tab="members">Участники</div>
+    <div class="tab" data-tab="challenges">Челленджи</div>
+  </div>
+
+  <!-- RUNS -->
+  <div class="panel active" id="panel-runs">
+    <div class="card">
+      <div class="card-title">Записать пробежку</div>
+      <div class="new-form-grid">
+        <input type="number" id="run-km" placeholder="Километраж, например 8.5" step="0.1" min="0" />
+        <input type="date" id="run-date" />
+      </div>
+      <div style="display:flex; gap:8px; margin-bottom:8px;">
+        <textarea id="run-note" placeholder="Комментарий (по желанию)" rows="1"></textarea>
+        <button class="btn-amber" id="btn-add-run">Записать</button>
+      </div>
+      <label class="photo-label" for="run-photo">
+        <span id="photo-file-label">📷 Прикрепить фото трекера (по желанию)</span>
+      </label>
+      <input type="file" id="run-photo" accept="image/*" style="display:none;" />
+    </div>
+    <div class="card" id="runs-list" style="padding:0 14px;"></div>
+  </div>
+
+  <!-- CITIES -->
+  <div class="panel" id="panel-cities">
+    <div class="period-toggle" id="cities-period"></div>
+    <div class="card" id="cities-list" style="padding:0 14px;"></div>
+  </div>
+
+  <!-- MEMBERS -->
+  <div class="panel" id="panel-members">
+    <div class="card">
+      <div class="new-form-grid" style="grid-template-columns: 1fr;">
+        <select id="members-city"></select>
+      </div>
+    </div>
+    <div class="period-toggle" id="members-period"></div>
+    <div class="card" id="members-list" style="padding:0 14px;"></div>
+  </div>
+
+  <!-- CHALLENGES -->
+  <div class="panel" id="panel-challenges">
+    <div class="card">
+      <div class="card-title">Новый челлендж</div>
+      <input type="text" id="ch-title" placeholder="Название, например «Сентябрьский спринт»" style="margin-bottom:8px;" />
+      <div class="new-form-grid">
+        <input type="date" id="ch-start" />
+        <input type="date" id="ch-end" />
+      </div>
+      <div class="card-title" style="margin:10px 0 4px;">Города-участники (пусто = все)</div>
+      <div class="city-checks" id="ch-city-checks"></div>
+      <button class="btn-amber" id="btn-add-challenge">Создать челлендж</button>
+    </div>
+    <div id="challenges-list"></div>
+  </div>
+
+</div>
+</div>
+
+<script>
+// Вставь сюда URL своего воркера после деплоя, например:
+// const API_URL = 'https://alrosa-running-club.твой-поддомен.workers.dev/api/data';
+const API_URL = 'https://alrosa-running-club.zimasps.workers.dev/api/data';
+const AUTH_URL = API_URL.replace('/api/data', '/api/auth');
+
+const SESSION_KEY = 'alrosa:session'; // логин текущего пользователя, хранится локально
+const ME_KEY = 'alrosa:me'; // хранится локально в браузере, Cloudflare не нужен
+
+let data = { cities: [], runs: [], challenges: [] };
+let me = { name: '', city: '' };
+let citiesPeriod = 'all';
+let membersPeriod = 'all';
+
+function todayISO() { return new Date().toISOString().slice(0,10); }
+
+function getSession() {
+  try { return localStorage.getItem(SESSION_KEY) || ''; } catch (e) { return ''; }
+}
+function setSession(login) {
+  try { localStorage.setItem(SESSION_KEY, login); } catch (e) {}
+}
+function clearSession() {
+  try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+}
+
+function showLoginGate() {
+  document.getElementById('login-gate').style.display = 'flex';
+  document.getElementById('app-content').style.display = 'none';
+}
+function showApp() {
+  document.getElementById('login-gate').style.display = 'none';
+  document.getElementById('app-content').style.display = 'block';
+}
+
+async function attemptLogin() {
+  const loginEl = document.getElementById('login-input');
+  const pinEl = document.getElementById('pin-input');
+  const errEl = document.getElementById('login-error');
+  const login = loginEl.value.trim().toLowerCase();
+  const pin = pinEl.value.trim();
+  errEl.textContent = '';
+
+  if (!login) { errEl.textContent = 'Введи логин'; loginEl.focus(); return; }
+  if (!/^\d{4,6}$/.test(pin)) { errEl.textContent = 'PIN — это 4–6 цифр'; pinEl.focus(); return; }
+
+  const btn = document.getElementById('btn-login');
+  btn.disabled = true;
+  btn.textContent = 'Входим...';
+
+  try {
+    const res = await fetch(AUTH_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login, pin }),
+    });
+    const result = await res.json();
+    if (!result.ok) {
+      errEl.textContent = result.error || 'Не получилось войти';
+      btn.disabled = false;
+      btn.textContent = 'Войти';
+      return;
+    }
+    setSession(login);
+    if (!me.name) { me.name = login; saveMe(); }
+    await startApp();
+  } catch (e) {
+    errEl.textContent = 'Нет связи с сервером. Проверь адрес воркера в коде страницы.';
+    btn.disabled = false;
+    btn.textContent = 'Войти';
+  }
+}
+
+function logout() {
+  clearSession();
+  document.getElementById('login-input').value = '';
+  document.getElementById('pin-input').value = '';
+  showLoginGate();
+}
+
+async function startApp() {
+  showApp();
+  await loadData();
+  render();
+}
+
+function loadMe() {
+  try {
+    const raw = localStorage.getItem(ME_KEY);
+    me = raw ? JSON.parse(raw) : { name: '', city: '' };
+  } catch (e) { me = { name: '', city: '' }; }
+}
+function saveMe() {
+  try { localStorage.setItem(ME_KEY, JSON.stringify(me)); } catch (e) {}
+}
+async function loadData() {
+  try {
+    const res = await fetch(API_URL);
+    data = await res.json();
+  } catch (e) {
+    console.error('Не удалось загрузить данные с воркера', e);
+    data = { cities: [], runs: [], challenges: [] };
+  }
+}
+async function saveData() {
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  } catch (e) {
+    console.error('Не удалось сохранить данные на воркер', e);
+  }
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+function fmtDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' });
+}
+function isCurrentMonth(iso) {
+  const now = new Date();
+  const d = new Date(iso + 'T00:00:00');
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+}
+function ensureIdentity() {
+  const nameEl = document.getElementById('my-name');
+  const cityEl = document.getElementById('my-city');
+  const name = nameEl.value.trim();
+  const city = cityEl.value;
+  if (!name) { nameEl.focus(); return null; }
+  if (!city) { cityEl.focus(); return null; }
+  if (name !== me.name || city !== me.city) { me = { name, city }; saveMe(); }
+  return me;
+}
+
+/* ---------- identity / city select population ---------- */
+function populateCitySelects() {
+  const selects = [document.getElementById('my-city'), document.getElementById('members-city')];
+  selects.forEach(sel => {
+    const isMain = sel.id === 'my-city';
+    const current = sel.value;
+    sel.innerHTML = (isMain ? '<option value="">Выбери город</option>' : '') +
+      data.cities.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    if (data.cities.includes(current)) sel.value = current;
+  });
+  if (!document.getElementById('members-city').value && data.cities.length) {
+    document.getElementById('members-city').value = me.city || data.cities[0];
+  }
+  // challenge city checkboxes
+  const checksEl = document.getElementById('ch-city-checks');
+  checksEl.innerHTML = data.cities.map(c => `
+    <span class="btn-chip" data-city="${escapeHtml(c)}" onclick="toggleChipEl(this)">${escapeHtml(c)}</span>
+  `).join('');
+}
+function toggleChipEl(el) { el.classList.toggle('active'); }
+
+/* ---------- render ---------- */
+function render() {
+  populateCitySelects();
+  document.getElementById('my-name').value = me.name;
+  document.getElementById('my-city').value = me.city;
+  renderRuns();
+  renderPeriodToggle('cities-period', citiesPeriod, (p) => { citiesPeriod = p; render(); });
+  renderCities();
+  renderPeriodToggle('members-period', membersPeriod, (p) => { membersPeriod = p; render(); });
+  renderMembers();
+  renderChallenges();
+}
+
+function renderPeriodToggle(containerId, current, onChange) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = `
+    <span class="btn-chip ${current==='all'?'active':''}" data-p="all">Всё время</span>
+    <span class="btn-chip ${current==='month'?'active':''}" data-p="month">Этот месяц</span>
+  `;
+  el.querySelectorAll('.btn-chip').forEach(chip => {
+    chip.onclick = () => onChange(chip.dataset.p);
+  });
+}
+
+let editingRunId = null;
+let openPhotoIds = new Set();
+let photoCache = {};
+
+function renderRuns() {
+  const container = document.getElementById('runs-list');
+  if (data.runs.length === 0) {
+    container.innerHTML = '<div class="empty" style="border:none;">Пока нет пробежек. Запиши первую выше.</div>';
+    return;
+  }
+  const sorted = [...data.runs].sort((a,b) => new Date(b.date) - new Date(a.date) || new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 30);
+  container.innerHTML = sorted.map(r => {
+    const mine = me.name && r.name === me.name;
+    if (editingRunId === r.id) {
+      return `
+        <div class="run-row">
+          <div class="run-top">
+            <div><span class="run-name">${escapeHtml(r.name)}</span> · <span class="run-city">${escapeHtml(r.city)}</span></div>
+          </div>
+          <div class="edit-grid">
+            <input type="number" id="edit-km-${r.id}" value="${r.km}" step="0.1" min="0" />
+            <input type="date" id="edit-date-${r.id}" value="${r.date}" />
+          </div>
+          <div class="edit-row-bottom">
+            <textarea id="edit-note-${r.id}" rows="1">${escapeHtml(r.note || '')}</textarea>
+          </div>
+          <div class="run-actions">
+            <button class="btn-amber" onclick="saveEditRun('${r.id}')">Сохранить</button>
+            <button class="btn-ghost" onclick="cancelEditRun()">Отмена</button>
+          </div>
+        </div>
+      `;
+    }
+    return `
+      <div class="run-row">
+        <div class="run-top">
+          <div><span class="run-name">${escapeHtml(r.name)}</span> · <span class="run-city">${escapeHtml(r.city)}</span></div>
+          <div class="run-km">${r.km} км</div>
+        </div>
+        ${r.note ? `<div class="run-note">${escapeHtml(r.note)}</div>` : ''}
+        <div class="run-date">${fmtDate(r.date)}</div>
+        ${openPhotoIds.has(r.id) ? `<img class="run-photo-thumb" src="${photoCache[r.id] || ''}" alt="Фото трекера" />` : ''}
+        <div class="run-actions">
+          ${r.hasPhoto ? `<button class="btn-ghost" onclick="togglePhoto('${r.id}')">${openPhotoIds.has(r.id) ? 'Скрыть фото' : 'Фото трекера'}</button>` : ''}
+          ${mine ? `<button class="btn-ghost" onclick="startEditRun('${r.id}')">Изменить</button>` : ''}
+          ${mine ? `<button class="btn-ghost" onclick="deleteRun('${r.id}')">Удалить</button>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function cityTotals(period) {
+  const runs = period === 'month' ? data.runs.filter(r => isCurrentMonth(r.date)) : data.runs;
+  const totals = {};
+  data.cities.forEach(c => totals[c] = 0);
+  runs.forEach(r => { totals[r.city] = (totals[r.city] || 0) + Number(r.km); });
+  return Object.entries(totals).sort((a,b) => b[1] - a[1]);
+}
+
+function renderCities() {
+  const container = document.getElementById('cities-list');
+  if (data.cities.length === 0) {
+    container.innerHTML = '<div class="empty" style="border:none;">Пока нет городов. Добавь город в профиле выше.</div>';
+    return;
+  }
+  const totals = cityTotals(citiesPeriod);
+  const max = Math.max(1, ...totals.map(t => t[1]));
+  container.innerHTML = totals.map(([city, km], i) => `
+    <div class="rank-row ${i===0 && km>0 ? 'gold' : ''}">
+      <div class="rank-num">${i+1}</div>
+      <div class="rank-main">
+        <div class="rank-name">${escapeHtml(city)}</div>
+        <div class="rank-bar-track"><div class="rank-bar-fill" style="width:${(km/max*100).toFixed(1)}%"></div></div>
+      </div>
+      <div class="rank-km">${km.toFixed(1)} км</div>
+    </div>
+  `).join('');
+}
+
+function memberTotals(city, period) {
+  const runs = data.runs.filter(r => r.city === city && (period === 'month' ? isCurrentMonth(r.date) : true));
+  const totals = {};
+  runs.forEach(r => { totals[r.name] = (totals[r.name] || 0) + Number(r.km); });
+  return Object.entries(totals).sort((a,b) => b[1] - a[1]);
+}
+
+function renderMembers() {
+  const city = document.getElementById('members-city').value;
+  const container = document.getElementById('members-list');
+  if (!city) {
+    container.innerHTML = '<div class="empty" style="border:none;">Выбери город, чтобы увидеть рейтинг участников.</div>';
+    return;
+  }
+  const totals = memberTotals(city, membersPeriod);
+  if (totals.length === 0) {
+    container.innerHTML = '<div class="empty" style="border:none;">Пока нет пробежек в этом городе.</div>';
+    return;
+  }
+  const max = Math.max(1, ...totals.map(t => t[1]));
+  container.innerHTML = totals.map(([name, km], i) => `
+    <div class="rank-row ${i===0 ? 'gold' : ''}">
+      <div class="rank-num">${i+1}</div>
+      <div class="rank-main">
+        <div class="rank-name">${escapeHtml(name)}</div>
+        <div class="rank-bar-track"><div class="rank-bar-fill" style="width:${(km/max*100).toFixed(1)}%"></div></div>
+      </div>
+      <div class="rank-km">${km.toFixed(1)} км</div>
+    </div>
+  `).join('');
+}
+
+function challengeStatus(ch) {
+  const now = todayISO();
+  if (now < ch.startDate) return { key: 'upcoming', label: 'Скоро' };
+  if (now > ch.endDate) return { key: 'finished', label: 'Завершён' };
+  return { key: 'active', label: 'Активен' };
+}
+
+function challengeCityTotals(ch) {
+  const cities = ch.cities && ch.cities.length ? ch.cities : data.cities;
+  const runs = data.runs.filter(r => r.date >= ch.startDate && r.date <= ch.endDate && cities.includes(r.city));
+  const totals = {};
+  cities.forEach(c => totals[c] = 0);
+  runs.forEach(r => { totals[r.city] = (totals[r.city] || 0) + Number(r.km); });
+  return Object.entries(totals).sort((a,b) => b[1] - a[1]);
+}
+
+function renderChallenges() {
+  const container = document.getElementById('challenges-list');
+  if (data.challenges.length === 0) {
+    container.innerHTML = '<div class="empty">Пока нет челленджей. Создай первый выше.</div>';
+    return;
+  }
+  const sorted = [...data.challenges].sort((a,b) => new Date(b.startDate) - new Date(a.startDate));
+  container.innerHTML = sorted.map(ch => {
+    const st = challengeStatus(ch);
+    const totals = challengeCityTotals(ch);
+    const max = Math.max(1, ...totals.map(t => t[1]));
+    return `
+      <div class="card challenge-card">
+        <div class="challenge-top">
+          <div class="challenge-title">${escapeHtml(ch.title)}</div>
+          <span class="status-pill status-${st.key}">${st.label}</span>
+        </div>
+        <div class="challenge-dates">${fmtDate(ch.startDate)} — ${fmtDate(ch.endDate)} · ${ch.cities && ch.cities.length ? ch.cities.map(escapeHtml).join(', ') : 'все города'}</div>
+        ${totals.map(([city, km], i) => `
+          <div class="rank-row ${i===0 && km>0 ? 'gold' : ''}">
+            <div class="rank-num">${i+1}</div>
+            <div class="rank-main">
+              <div class="rank-name">${escapeHtml(city)}</div>
+              <div class="rank-bar-track"><div class="rank-bar-fill" style="width:${(km/max*100).toFixed(1)}%"></div></div>
+            </div>
+            <div class="rank-km">${km.toFixed(1)} км</div>
+          </div>
+        `).join('')}
+        <div style="margin-top:10px; text-align:right;">
+          <button class="btn-ghost" onclick="removeChallenge('${ch.id}')">Удалить</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ---------- actions ---------- */
+async function addCity() {
+  const input = document.getElementById('new-city');
+  const name = input.value.trim();
+  if (!name || data.cities.includes(name)) { input.value = ''; return; }
+  data.cities.push(name);
+  await saveData();
+  input.value = '';
+  render();
+}
+
+function compressImage(file, maxDim, quality) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
+        else if (h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function addRun() {
+  const identity = ensureIdentity();
+  if (!identity) return;
+  const kmEl = document.getElementById('run-km');
+  const dateEl = document.getElementById('run-date');
+  const noteEl = document.getElementById('run-note');
+  const photoEl = document.getElementById('run-photo');
+  const km = parseFloat(kmEl.value);
+  if (!km || km <= 0) { kmEl.focus(); return; }
+
+  const runId = 'r' + Date.now() + Math.random().toString(36).slice(2,6);
+  let photo = null;
+
+  if (photoEl.files && photoEl.files[0]) {
+    try {
+      photo = await compressImage(photoEl.files[0], 700, 0.5);
+    } catch (e) {
+      console.error('Не удалось обработать фото', e);
+    }
+  }
+
+  data.runs.push({
+    id: runId,
+    name: identity.name,
+    city: identity.city,
+    km,
+    date: dateEl.value || todayISO(),
+    note: noteEl.value.trim(),
+    hasPhoto: !!photo,
+    photo: photo,
+    createdAt: new Date().toISOString(),
+  });
+  await saveData();
+  kmEl.value = '';
+  noteEl.value = '';
+  photoEl.value = '';
+  document.getElementById('photo-file-label').textContent = '📷 Прикрепить фото трекера (по желанию)';
+  render();
+}
+
+function startEditRun(id) {
+  editingRunId = id;
+  renderRuns();
+}
+function cancelEditRun() {
+  editingRunId = null;
+  renderRuns();
+}
+async function saveEditRun(id) {
+  const run = data.runs.find(r => r.id === id);
+  if (!run) return;
+  const km = parseFloat(document.getElementById('edit-km-' + id).value);
+  const date = document.getElementById('edit-date-' + id).value;
+  const note = document.getElementById('edit-note-' + id).value.trim();
+  if (!km || km <= 0) return;
+  run.km = km;
+  run.date = date || run.date;
+  run.note = note;
+  editingRunId = null;
+  await saveData();
+  render();
+}
+async function deleteRun(id) {
+  data.runs = data.runs.filter(r => r.id !== id);
+  await saveData();
+  render();
+}
+function togglePhoto(id) {
+  if (openPhotoIds.has(id)) {
+    openPhotoIds.delete(id);
+  } else {
+    const run = data.runs.find(r => r.id === id);
+    photoCache[id] = run && run.photo ? run.photo : '';
+    openPhotoIds.add(id);
+  }
+  renderRuns();
+}
+
+async function addChallenge() {
+  const titleEl = document.getElementById('ch-title');
+  const startEl = document.getElementById('ch-start');
+  const endEl = document.getElementById('ch-end');
+  const title = titleEl.value.trim();
+  if (!title || !startEl.value || !endEl.value) return;
+  const selectedCities = Array.from(document.querySelectorAll('#ch-city-checks .btn-chip.active')).map(el => el.dataset.city);
+  data.challenges.push({
+    id: 'c' + Date.now() + Math.random().toString(36).slice(2,6),
+    title,
+    startDate: startEl.value,
+    endDate: endEl.value,
+    cities: selectedCities,
+    createdAt: new Date().toISOString(),
+  });
+  await saveData();
+  titleEl.value = '';
+  startEl.value = '';
+  endEl.value = '';
+  render();
+}
+
+async function removeChallenge(id) {
+  data.challenges = data.challenges.filter(c => c.id !== id);
+  await saveData();
+  render();
+}
+
+/* ---------- wiring ---------- */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+document.getElementById('btn-add-city').addEventListener('click', addCity);
+document.getElementById('new-city').addEventListener('keydown', e => { if (e.key === 'Enter') addCity(); });
+document.getElementById('my-name').addEventListener('change', e => { me.name = e.target.value.trim(); saveMe(); });
+document.getElementById('my-city').addEventListener('change', e => { me.city = e.target.value; saveMe(); render(); });
+document.getElementById('members-city').addEventListener('change', render);
+document.getElementById('btn-add-run').addEventListener('click', addRun);
+document.getElementById('run-photo').addEventListener('change', (e) => {
+  const label = document.getElementById('photo-file-label');
+  if (e.target.files && e.target.files[0]) {
+    label.textContent = '📷 ' + e.target.files[0].name;
+  } else {
+    label.textContent = '📷 Прикрепить фото трекера (по желанию)';
+  }
+});
+document.getElementById('btn-add-challenge').addEventListener('click', addChallenge);
+document.getElementById('run-date').value = todayISO();
+
+document.getElementById('btn-login').addEventListener('click', attemptLogin);
+document.getElementById('pin-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') attemptLogin(); });
+document.getElementById('login-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('pin-input').focus(); });
+document.getElementById('btn-logout').addEventListener('click', logout);
+
+(async function init() {
+  loadMe();
+  const existingSession = getSession();
+  if (existingSession) {
+    document.getElementById('login-input').value = existingSession;
+    await startApp();
+  } else {
+    showLoginGate();
+  }
+})();
+</script>
+</body>
+</html>
