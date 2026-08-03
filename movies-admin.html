@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Модерация — Узнать себя</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=EB+Garamond&display=swap');
+:root{ --ink:#2b2415; --ink-soft:#5b5138; --rule:#d9c99a; --burgundy:#7a2233; --paper:#f7efd9; }
+*{box-sizing:border-box;}
+body{ margin:0; background:#14110e; font-family:'EB Garamond',serif; padding:20px 14px; color:var(--ink); }
+.wrap{ max-width:640px; margin:0 auto; background:var(--paper); border-radius:10px; padding:22px; }
+h1{ font-family:'Playfair Display',serif; font-size:20px; margin:0 0 14px; }
+input[type=password]{ width:100%; border:1px solid var(--rule); border-radius:6px; padding:9px; margin-bottom:14px; font-family:'EB Garamond',serif; }
+button.load{ width:100%; padding:10px; border:none; border-radius:6px; background:var(--burgundy); color:#fff; cursor:pointer; margin-bottom:16px; }
+.entry{ border:1px solid var(--rule); border-radius:8px; padding:12px; margin-bottom:12px; }
+.entry-title{ font-weight:bold; }
+.entry-meta{ font-size:12px; color:var(--ink-soft); }
+.entry-text{ margin:6px 0; font-size:14.5px; }
+.del{ background:none; border:1px solid var(--burgundy); color:var(--burgundy); border-radius:5px; padding:3px 10px; font-size:12.5px; cursor:pointer; }
+.comment{ margin:6px 0 0 12px; font-size:13.5px; border-left:2px solid var(--rule); padding-left:8px; }
+.status{ font-size:13px; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Модерация ленты «Узнать себя»</h1>
+  <input type="password" id="secret" placeholder="секретное слово">
+  <button class="load" id="loadBtn">Загрузить всё</button>
+  <div id="list"></div>
+  <p class="status" id="status"></p>
+</div>
+<script>
+const API_BASE = 'https://movies-sync.zimasps.workers.dev';
+const secretInput = document.getElementById('secret');
+const list = document.getElementById('list');
+const status = document.getElementById('status');
+
+function esc(s){ return (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+async function load(){
+  const secret = secretInput.value.trim();
+  if(!secret){ status.textContent = 'Введи секретное слово'; return; }
+  status.textContent = 'Загружаю…';
+  const res = await fetch(`${API_BASE}/admin/feed?secret=${encodeURIComponent(secret)}`);
+  const data = await res.json();
+  if(data.error){ status.textContent = 'Неверное секретное слово'; return; }
+  status.textContent = '';
+  list.innerHTML = data.entries.map(e=>`
+    <div class="entry">
+      <div class="entry-title">${esc(e.title)} <span class="entry-meta">— ${esc(e.author)}, ${e.type}</span></div>
+      <div class="entry-text">${esc(e.text)}</div>
+      <button class="del" data-kind="entry" data-id="${e.id}">Удалить запись</button>
+      ${e.comments.map(c=>`
+        <div class="comment">
+          <b>${esc(c.author)}:</b> ${esc(c.text)}
+          <button class="del" data-kind="comment" data-entry="${e.id}" data-id="${c.id}">×</button>
+        </div>
+      `).join('')}
+    </div>
+  `).join('') || '<p>Пока пусто.</p>';
+
+  list.querySelectorAll('[data-kind="entry"]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      if(!confirm('Удалить эту запись целиком (вместе с комментариями)?')) return;
+      await fetch(`${API_BASE}/entries/delete`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ id: btn.dataset.id, adminSecret: secretInput.value.trim() })
+      });
+      load();
+    });
+  });
+  list.querySelectorAll('[data-kind="comment"]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      await fetch(`${API_BASE}/comments/delete`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ entryId: btn.dataset.entry, id: btn.dataset.id, adminSecret: secretInput.value.trim() })
+      });
+      load();
+    });
+  });
+}
+document.getElementById('loadBtn').addEventListener('click', load);
+</script>
+</body>
+</html>
