@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Узнать себя</title>
@@ -27,6 +28,20 @@ h1{ font-family:'Playfair Display',serif; font-size:clamp(24px,5vw,34px); color:
 }
 .search-row input::placeholder{ color:rgba(247,239,217,.4); }
 .search-row input:focus{ outline:none; border-color:var(--gold); }
+
+.feed-tabs{ display:flex; gap:8px; margin-bottom:16px; }
+.feed-tab{
+  position:relative; background:transparent; border:1px solid var(--gold-dim); color:var(--gold-dim);
+  padding:7px 14px; border-radius:6px; font-family:'EB Garamond',serif; font-size:13.5px; cursor:pointer;
+}
+.feed-tab.active{ background:rgba(198,161,91,.15); color:var(--gold); border-color:var(--gold); }
+.unread-dot{
+  display:inline-block; width:8px; height:8px; border-radius:50%; background:#e05d5d;
+  margin-left:6px; vertical-align:middle;
+}
+.new-comments-badge{
+  font-size:11px; color:#e05d5d; border:1px solid #e05d5d; border-radius:10px; padding:1px 8px; margin-left:8px;
+}
 
 .fab{
   display:block; width:100%; margin-bottom:20px; padding:12px; border:none; border-radius:8px;
@@ -126,6 +141,10 @@ textarea.field-input{ min-height:90px; resize:vertical; }
   <div class="search-row">
     <input type="text" id="searchInput" placeholder="Поиск по названию…">
   </div>
+  <div class="feed-tabs">
+    <button class="feed-tab active" id="tabAll">Все</button>
+    <button class="feed-tab" id="tabMine">Мои впечатления<span class="unread-dot" id="unreadDot" style="display:none;"></span></button>
+  </div>
   <button class="fab" id="openAddBtn">+ Поделиться впечатлением</button>
 
   <div id="content"></div>
@@ -171,10 +190,12 @@ textarea.field-input{ min-height:90px; resize:vertical; }
 
 <script>
 const API_BASE = 'https://movies-sync.zimasps.workers.dev';
+
 const EMOTIONS = ['Трогательно','Узнала себя','Разозлило','Стало легче дышать','Тревожно','Вдохновило','Смешно','Растрогало до слёз','Задело за живое','Не отпускает'];
 
 let entries = [];
 let view = 'feed';
+let feedFilter = 'all';
 let currentTitle = null;
 let selectedEmotions = [];
 let commentsCache = {};
@@ -221,6 +242,16 @@ function saveId(nick, pin){
   localStorage.setItem('feed_nick', nick);
   localStorage.setItem('feed_pin', pin);
 }
+function getSeenCount(entryId){
+  return parseInt(localStorage.getItem('seen:' + entryId) || '0', 10);
+}
+function markSeen(entryId, count){
+  localStorage.setItem('seen:' + entryId, String(count));
+}
+function isMine(entry){
+  const me = getSavedId();
+  return me.nick && entry.author.trim().toLowerCase() === me.nick.trim().toLowerCase();
+}
 
 async function loadEntries(){
   const res = await fetch(`${API_BASE}/entries`);
@@ -247,17 +278,44 @@ function groupByTitle(list){
   });
 }
 
-function renderFeed(){
+async function renderFeed(){
   const q = searchInput.value.trim().toLowerCase();
-  const groups = groupByTitle(entries).filter(g => !q || g.title.toLowerCase().includes(q));
+  let source = entries;
+  if(feedFilter === 'mine'){
+    const me = getSavedId();
+    if(!me.nick){
+      content.innerHTML = `<p class="empty">Пока не с чем сравнить — опубликуй хотя бы одно впечатление, и оно появится здесь.</p>`;
+      return;
+    }
+    source = entries.filter(isMine);
+  }
+  const groups = groupByTitle(source).filter(g => !q || g.title.toLowerCase().includes(q));
   if(groups.length === 0){
-    content.innerHTML = `<p class="empty">Пока пусто — стань первой, кто поделится впечатлением.</p>`;
+    content.innerHTML = `<p class="empty">${feedFilter==='mine' ? 'Ты пока ничего не публиковала.' : 'Пока пусто — стань первой, кто поделится впечатлением.'}</p>`;
     return;
   }
+
+  if(feedFilter === 'mine'){
+    for(const g of groups){
+      for(const e of g.entries){
+        if(!(e.id in commentsCache)) await loadComments(e.id);
+      }
+    }
+  }
+
   content.innerHTML = groups.map(g=>{
     const allEmotions = [...new Set(g.entries.flatMap(e=>e.emotions||[]))].slice(0,4);
+    let unreadHtml = '';
+    if(feedFilter === 'mine'){
+      const unreadCount = g.entries.reduce((sum,e)=>{
+        const total = (commentsCache[e.id]||[]).length;
+        const seen = getSeenCount(e.id);
+        return sum + Math.max(0, total - seen);
+      }, 0);
+      if(unreadCount > 0) unreadHtml = `<span class="new-comments-badge">+${unreadCount} новых</span>`;
+    }
     return `<div class="title-card" data-title="${escapeHtml(g.title)}">
-      <div class="title-name">${escapeHtml(g.title)}</div>
+      <div class="title-name">${escapeHtml(g.title)} ${unreadHtml}</div>
       <div class="title-meta">${g.type} · ${g.entries.length} ${g.entries.length===1?'впечатление':'впечатлений'}</div>
       <div class="title-emotions">${allEmotions.map(e=>`<span class="chip">${escapeHtml(e)}</span>`).join('')}</div>
     </div>`;
@@ -319,7 +377,12 @@ async function renderTitleView(){
 function wireEntryActions(){
   document.querySelectorAll('.toggle-comments').forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      openComments[btn.dataset.id] = !openComments[btn.dataset.id];
+      const entryId = btn.dataset.id;
+      openComments[entryId] = !openComments[entryId];
+      if(openComments[entryId]){
+        markSeen(entryId, (commentsCache[entryId]||[]).length);
+        updateUnreadDot();
+      }
       renderTitleView();
     });
   });
@@ -373,6 +436,32 @@ function renderAll(){
   if(view === 'feed') renderFeed();
   else renderTitleView();
 }
+
+async function updateUnreadDot(){
+  const me = getSavedId();
+  const dot = document.getElementById('unreadDot');
+  if(!me.nick){ dot.style.display = 'none'; return; }
+  const mine = entries.filter(isMine);
+  let hasUnread = false;
+  for(const e of mine){
+    if(!(e.id in commentsCache)) await loadComments(e.id);
+    if((commentsCache[e.id]||[]).length > getSeenCount(e.id)){ hasUnread = true; break; }
+  }
+  dot.style.display = hasUnread ? 'inline-block' : 'none';
+}
+
+document.getElementById('tabAll').addEventListener('click', ()=>{
+  feedFilter = 'all';
+  document.getElementById('tabAll').classList.add('active');
+  document.getElementById('tabMine').classList.remove('active');
+  renderAll();
+});
+document.getElementById('tabMine').addEventListener('click', ()=>{
+  feedFilter = 'mine';
+  document.getElementById('tabMine').classList.add('active');
+  document.getElementById('tabAll').classList.remove('active');
+  renderAll();
+});
 
 searchInput.addEventListener('input', ()=>{ if(view==='feed') renderFeed(); });
 
@@ -453,7 +542,11 @@ document.getElementById('submitEntryBtn').addEventListener('click', async ()=>{
 
 (async function init(){
   await loadEntries();
+  const params = new URLSearchParams(location.search);
+  const t = params.get('title');
+  if(t){ currentTitle = t; view = 'title'; }
   renderAll();
+  updateUnreadDot();
 })();
 </script>
 </body>
