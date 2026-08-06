@@ -329,6 +329,8 @@ function renderFilters(){
   });
 }
 
+let editingNoteId = null;
+
 function renderNotesList(){
   const q = document.getElementById('searchInput').value.trim().toLowerCase();
   let list = [...notes].sort((a,b)=>b.createdAt - a.createdAt);
@@ -340,7 +342,20 @@ function renderNotesList(){
     listEl.innerHTML = `<p class="empty">${notes.length===0 ? 'Пока пусто — запиши первую мысль выше.' : 'Ничего не нашлось.'}</p>`;
     return;
   }
-  listEl.innerHTML = list.map(n=>`
+  listEl.innerHTML = list.map(n=>{
+    if(n.id === editingNoteId){
+      return `
+        <div class="note-card" data-id="${n.id}">
+          <textarea class="edit-text" id="editText-${n.id}" style="width:100%;min-height:70px;background:rgba(255,255,255,.06);color:var(--paper);border:1px solid var(--gold-dim);border-radius:6px;padding:8px;font-family:'EB Garamond',serif;font-size:15px;">${escapeHtml(n.text)}</textarea>
+          <input type="text" class="edit-tags" id="editTags-${n.id}" value="${escapeHtml((n.tags||[]).join(', '))}" placeholder="теги через запятую" style="width:100%;margin-top:8px;border:1px solid rgba(198,161,91,.3);border-radius:5px;padding:6px 10px;background:rgba(255,255,255,.04);color:var(--paper);font-family:'EB Garamond',serif;font-size:13.5px;">
+          <div class="note-actions" style="margin-top:10px;">
+            <button class="save-edit" data-id="${n.id}">Сохранить</button>
+            <button class="cancel-edit" data-id="${n.id}">Отмена</button>
+          </div>
+        </div>
+      `;
+    }
+    return `
     <div class="note-card ${n.used?'used':''}" data-id="${n.id}">
       <div class="note-text">${escapeHtml(n.text)}</div>
       <div class="note-meta">
@@ -348,12 +363,40 @@ function renderNotesList(){
         <div class="note-date">${fmtDate(n.createdAt)} ${n.used ? '<span class="used-badge">использовано</span>' : ''}</div>
       </div>
       <div class="note-actions">
+        <button class="edit-note" data-id="${n.id}">Изменить</button>
         <button class="mark-used" data-id="${n.id}">${n.used ? 'Вернуть в идеи' : 'Отметить использованной'}</button>
         <button class="del-note" data-id="${n.id}">Удалить</button>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
+  listEl.querySelectorAll('.edit-note').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      editingNoteId = btn.dataset.id;
+      renderNotesList();
+    });
+  });
+  listEl.querySelectorAll('.cancel-edit').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      editingNoteId = null;
+      renderNotesList();
+    });
+  });
+  listEl.querySelectorAll('.save-edit').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.id;
+      const n = notes.find(x=>x.id===id);
+      const newText = document.getElementById(`editText-${id}`).value.trim();
+      const newTags = document.getElementById(`editTags-${id}`).value.split(',').map(t=>t.trim()).filter(Boolean);
+      if(!newText) return;
+      n.text = newText;
+      n.tags = newTags;
+      editingNoteId = null;
+      await saveNotes();
+      renderAll();
+    });
+  });
   listEl.querySelectorAll('.mark-used').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const n = notes.find(x=>x.id===btn.dataset.id);
