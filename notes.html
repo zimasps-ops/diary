@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Заметки</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Caveat:wght@500;600&family=EB+Garamond:ital@0;1&display=swap');
+:root{
+  --leather-1:#0f2d24; --leather-2:#0a1f19; --gold:#c6a15b; --gold-dim:#9a7d43;
+  --paper:#f7efd9; --ink:#2b2415; --ink-soft:#5b5138; --rule:#d9c99a; --burgundy:#7a2233; --green:#2f6b45;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0; min-height:100vh; background:radial-gradient(ellipse at top, #1a2a24 0%, #0d1512 100%);
+  font-family:'EB Garamond', serif; color:var(--paper); padding:20px 14px 60px;
+}
+.wrap{ max-width:640px; margin:0 auto; }
+
+/* ---- lock screen ---- */
+.lock{ display:flex; align-items:center; justify-content:center; min-height:80vh; }
+.lock.hidden{ display:none; }
+.lock-box{
+  width:100%; max-width:320px; text-align:center;
+  background:linear-gradient(135deg, var(--leather-1), var(--leather-2));
+  border-radius:10px; padding:32px 24px; box-shadow:0 30px 60px rgba(0,0,0,.5);
+  border:1px solid rgba(198,161,91,.25);
+}
+.lock-mark{
+  width:52px; height:52px; margin:0 auto 16px; border:1.5px solid var(--gold-dim); border-radius:50%;
+  display:flex; align-items:center; justify-content:center; color:var(--gold); font-size:22px;
+}
+.lock-title{ font-family:'Playfair Display',serif; font-size:26px; color:var(--gold); margin:0; }
+.lock-sub{ font-family:'Caveat',cursive; color:var(--gold-dim); font-size:16px; margin:8px 0 20px; }
+.lock-input{
+  width:100%; text-align:center; font-size:15px; margin-bottom:10px;
+  background:rgba(247,239,217,.08); border:1px solid var(--gold-dim); color:var(--paper);
+  border-radius:6px; padding:9px 10px; font-family:'EB Garamond',serif;
+}
+.lock-input:focus{ outline:none; border-color:var(--gold); }
+.lock-btn{
+  width:100%; background:transparent; border:1px solid var(--gold); color:var(--gold);
+  padding:9px; border-radius:6px; font-family:'EB Garamond',serif; font-size:15px; cursor:pointer; margin-top:4px;
+}
+.lock-btn:hover{ background:rgba(198,161,91,.12); }
+.lock-error{ color:#e08a8a; font-size:12.5px; min-height:16px; margin-top:8px; }
+.lock-hint{ color:var(--gold-dim); font-size:12px; opacity:.85; margin-top:10px; }
+.lock-link{ background:none; border:none; color:var(--gold-dim); font-size:12px; text-decoration:underline; cursor:pointer; margin-top:6px; }
+
+/* ---- app ---- */
+.app{ display:none; }
+.app.visible{ display:block; }
+header{ text-align:center; margin-bottom:18px; }
+h1{ font-family:'Playfair Display',serif; font-size:clamp(24px,5vw,32px); color:var(--gold); margin:0; }
+.subtitle{ font-family:'Caveat',cursive; font-size:17px; color:var(--gold-dim); margin-top:4px; }
+
+.capture-box{
+  background:rgba(255,255,255,.05); border:1px solid rgba(198,161,91,.3); border-radius:10px;
+  padding:14px; margin-bottom:20px;
+}
+.capture-box textarea{
+  width:100%; min-height:70px; border:none; background:transparent; color:var(--paper);
+  font-family:'EB Garamond',serif; font-size:15.5px; resize:vertical;
+}
+.capture-box textarea:focus{ outline:none; }
+.capture-box textarea::placeholder{ color:rgba(247,239,217,.4); }
+.tag-input-row{ display:flex; gap:8px; margin-top:8px; align-items:center; flex-wrap:wrap; }
+.tag-input-row input{
+  flex:1; min-width:120px; border:1px solid rgba(198,161,91,.3); border-radius:5px; padding:6px 10px;
+  background:rgba(255,255,255,.04); color:var(--paper); font-family:'EB Garamond',serif; font-size:13.5px;
+}
+.tag-input-row input:focus{ outline:none; border-color:var(--gold); }
+.save-note-btn{
+  border:none; background:var(--burgundy); color:#fff; padding:8px 18px; border-radius:6px;
+  font-family:'EB Garamond',serif; font-size:14.5px; cursor:pointer;
+}
+.save-note-btn:hover{ filter:brightness(1.1); }
+
+.filter-row{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px; }
+.tag-filter{
+  font-size:12.5px; padding:4px 11px; border-radius:12px; border:1px solid var(--gold-dim);
+  background:transparent; color:var(--gold-dim); cursor:pointer;
+}
+.tag-filter.active{ background:rgba(198,161,91,.2); color:var(--gold); border-color:var(--gold); }
+
+.search-row{ margin-bottom:16px; }
+.search-row input{
+  width:100%; border:1px solid var(--gold-dim); border-radius:6px; padding:8px 12px;
+  background:rgba(255,255,255,.06); color:var(--paper); font-family:'EB Garamond',serif; font-size:14px;
+}
+.search-row input::placeholder{ color:rgba(247,239,217,.4); }
+.search-row input:focus{ outline:none; border-color:var(--gold); }
+
+.note-card{
+  background:rgba(255,255,255,.04); border:1px solid rgba(198,161,91,.2); border-radius:8px;
+  padding:14px 16px; margin-bottom:12px; position:relative;
+}
+.note-card.used{ opacity:.55; }
+.note-text{ font-size:15.5px; line-height:1.5; color:var(--paper); white-space:pre-wrap; margin-bottom:8px; }
+.note-meta{ display:flex; justify-content:space-between; align-items:flex-end; gap:8px; flex-wrap:wrap; }
+.note-tags{ display:flex; flex-wrap:wrap; gap:5px; }
+.note-tag{ font-size:11px; padding:2px 8px; border-radius:10px; border:1px solid var(--gold-dim); color:var(--gold); background:rgba(198,161,91,.1); }
+.note-date{ font-size:11px; color:var(--gold-dim); }
+.note-actions{ display:flex; gap:10px; margin-top:8px; }
+.note-actions button{ background:none; border:none; color:var(--gold-dim); font-size:12px; text-decoration:underline; cursor:pointer; padding:0; }
+.used-badge{ font-size:11px; color:var(--green); border:1px solid var(--green); border-radius:10px; padding:1px 8px; }
+
+.empty{ text-align:center; color:var(--gold-dim); font-style:italic; margin-top:40px; }
+.top-actions{ display:flex; justify-content:space-between; margin-bottom:14px; font-size:12px; }
+.top-actions button{ background:none; border:none; color:var(--gold-dim); text-decoration:underline; cursor:pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lock" id="lock">
+    <div class="lock-box">
+      <div class="lock-mark">✎</div>
+      <h1 class="lock-title">Заметки</h1>
+      <p class="lock-sub">идеи для постов, на лету</p>
+      <div id="lockPanel"></div>
+    </div>
+  </div>
+
+  <div class="app" id="app">
+    <header>
+      <h1>Заметки</h1>
+      <p class="subtitle">идеи для постов, на лету</p>
+    </header>
+
+    <div class="top-actions">
+      <span></span>
+      <button id="logoutBtn">Выйти</button>
+    </div>
+
+    <div class="capture-box">
+      <textarea id="noteText" placeholder="Мысль, идея, наблюдение — пиши как есть..."></textarea>
+      <div class="tag-input-row">
+        <input type="text" id="noteTags" placeholder="теги через запятую: бег, самооценка...">
+        <button class="save-note-btn" id="saveNoteBtn">Сохранить</button>
+      </div>
+    </div>
+
+    <div class="search-row">
+      <input type="text" id="searchInput" placeholder="Поиск по тексту…">
+    </div>
+    <div class="filter-row" id="filterRow"></div>
+
+    <div id="notesList"></div>
+  </div>
+
+</div>
+
+<script>
+const API_BASE = 'https://notes-sync.zimasps.workers.dev';
+
+const lock = document.getElementById('lock');
+const lockPanel = document.getElementById('lockPanel');
+const app = document.getElementById('app');
+
+let cryptoKey = null;
+let notes = [];
+let currentUsername = '';
+let currentSalt = null;
+let activeTag = null;
+let showUsed = true;
+
+function uid(){ return 'n' + Date.now() + Math.random().toString(36).slice(2,7); }
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function fmtDate(ts){
+  return new Date(ts).toLocaleDateString('ru-RU', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function b64FromBytes(bytes){
+  let bin=''; const arr=new Uint8Array(bytes);
+  for(let i=0;i<arr.length;i++) bin += String.fromCharCode(arr[i]);
+  return btoa(bin);
+}
+function bytesFromB64(b64){
+  const bin=atob(b64); const bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+  return bytes;
+}
+async function deriveKey(pin, saltBytes){
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pin), {name:'PBKDF2'}, false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name:'PBKDF2', salt: saltBytes, iterations: 150000, hash:'SHA-256' },
+    keyMaterial, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']
+  );
+}
+async function encryptJSON(key, obj){
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const data = new TextEncoder().encode(JSON.stringify(obj));
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, data);
+  return { iv: b64FromBytes(iv), ct: b64FromBytes(ct) };
+}
+async function decryptJSON(key, ivB64, ctB64){
+  const iv = bytesFromB64(ivB64);
+  const ct = bytesFromB64(ctB64);
+  const buf = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ct);
+  return JSON.parse(new TextDecoder().decode(buf));
+}
+function hasCrypto(){ return !!(window.crypto && window.crypto.subtle); }
+
+async function fetchAccount(username){
+  const res = await fetch(`${API_BASE}/notes?user=${encodeURIComponent(username)}`);
+  if(res.status === 404) return null;
+  if(!res.ok) throw new Error('network');
+  return res.json();
+}
+async function pushAccount(payload){
+  const res = await fetch(`${API_BASE}/notes`, {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+  });
+  if(!res.ok) throw new Error('network');
+  return res.json();
+}
+
+function renderLoginForm(){
+  const savedUser = localStorage.getItem('notes_username') || '';
+  lockPanel.innerHTML = `
+    <input class="lock-input" type="text" autocapitalize="off" autocorrect="off" maxlength="30" id="loginUser" placeholder="логин" value="${savedUser}">
+    <input class="lock-input" type="password" maxlength="20" id="loginPin" placeholder="PIN">
+    <button class="lock-btn" id="loginBtn">Войти</button>
+    <p class="lock-error" id="lockErr"></p>
+    <p class="lock-hint">Если такого логина ещё нет — предложим создать новый.</p>
+  `;
+  const tryLogin = async ()=>{
+    const user = document.getElementById('loginUser').value.trim().toLowerCase();
+    const pin = document.getElementById('loginPin').value.trim();
+    const err = document.getElementById('lockErr');
+    err.textContent = '';
+    if(!user){ err.textContent = 'Введи логин'; return; }
+    if(pin.length < 4){ err.textContent = 'PIN — минимум 4 символа'; return; }
+    err.textContent = 'Проверяю…';
+    try{
+      const account = await fetchAccount(user);
+      if(account === null){ renderConfirmCreate(user, pin); return; }
+      const salt = bytesFromB64(account.salt);
+      const key = await deriveKey(pin, salt);
+      await decryptJSON(key, account.checkIv, account.checkCt);
+      const data = await decryptJSON(key, account.dataIv, account.dataCt);
+      cryptoKey = key; currentUsername = user; currentSalt = salt;
+      notes = data.notes || [];
+      localStorage.setItem('notes_username', user);
+      openApp();
+    }catch(e){
+      err.textContent = e.message === 'network' ? 'Нет связи с сервером' : 'Неверный PIN';
+    }
+  };
+  document.getElementById('loginBtn').addEventListener('click', tryLogin);
+  lockPanel.querySelectorAll('.lock-input').forEach(inp=>{
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter') tryLogin(); });
+  });
+}
+
+function renderConfirmCreate(user, pin){
+  lockPanel.innerHTML = `
+    <p class="lock-hint">Логин «${escapeHtml(user)}» свободен — создадим новый. Введи PIN ещё раз.</p>
+    <input class="lock-input" type="password" maxlength="20" id="pinConfirm" placeholder="повтори PIN">
+    <button class="lock-btn" id="confirmBtn">Создать</button>
+    <button class="lock-link" id="backBtn">Назад</button>
+    <p class="lock-error" id="lockErr"></p>
+  `;
+  document.getElementById('confirmBtn').addEventListener('click', async ()=>{
+    const err = document.getElementById('lockErr');
+    const pin2 = document.getElementById('pinConfirm').value.trim();
+    if(pin2 !== pin){ err.textContent = 'PIN не совпадает'; return; }
+    err.textContent = 'Создаю…';
+    try{
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const key = await deriveKey(pin, salt);
+      const check = await encryptJSON(key, {ok:true});
+      const data = await encryptJSON(key, {notes:[]});
+      await pushAccount({
+        user, salt: b64FromBytes(salt),
+        checkIv: check.iv, checkCt: check.ct, dataIv: data.iv, dataCt: data.ct
+      });
+      cryptoKey = key; currentUsername = user; currentSalt = salt; notes = [];
+      localStorage.setItem('notes_username', user);
+      openApp();
+    }catch(e){
+      err.textContent = 'Нет связи с сервером, попробуй снова.';
+    }
+  });
+  document.getElementById('backBtn').addEventListener('click', renderLoginForm);
+}
+
+function openApp(){
+  lock.classList.add('hidden');
+  app.classList.add('visible');
+  renderAll();
+}
+document.getElementById('logoutBtn').addEventListener('click', ()=>{
+  if(!confirm('Выйти? Заметки останутся на сервере.')) return;
+  lock.classList.remove('hidden');
+  app.classList.remove('visible');
+  lockPanel.innerHTML = '';
+  cryptoKey=null; notes=[]; currentUsername=''; currentSalt=null; activeTag=null;
+  renderLoginForm();
+});
+
+async function saveNotes(){
+  const check = await encryptJSON(cryptoKey, {ok:true});
+  const data = await encryptJSON(cryptoKey, {notes});
+  await pushAccount({
+    user: currentUsername, salt: b64FromBytes(currentSalt),
+    checkIv: check.iv, checkCt: check.ct, dataIv: data.iv, dataCt: data.ct
+  });
+}
+
+function allTags(){
+  return [...new Set(notes.flatMap(n=>n.tags||[]))].sort();
+}
+
+function renderFilters(){
+  const tags = allTags();
+  const filterRow = document.getElementById('filterRow');
+  if(tags.length === 0){ filterRow.innerHTML = ''; return; }
+  filterRow.innerHTML = tags.map(t=>`<button class="tag-filter ${activeTag===t?'active':''}" data-tag="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('');
+  filterRow.querySelectorAll('.tag-filter').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      activeTag = activeTag === btn.dataset.tag ? null : btn.dataset.tag;
+      renderAll();
+    });
+  });
+}
+
+function renderNotesList(){
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  let list = [...notes].sort((a,b)=>b.createdAt - a.createdAt);
+  if(activeTag) list = list.filter(n => (n.tags||[]).includes(activeTag));
+  if(q) list = list.filter(n => n.text.toLowerCase().includes(q));
+
+  const listEl = document.getElementById('notesList');
+  if(list.length === 0){
+    listEl.innerHTML = `<p class="empty">${notes.length===0 ? 'Пока пусто — запиши первую мысль выше.' : 'Ничего не нашлось.'}</p>`;
+    return;
+  }
+  listEl.innerHTML = list.map(n=>`
+    <div class="note-card ${n.used?'used':''}" data-id="${n.id}">
+      <div class="note-text">${escapeHtml(n.text)}</div>
+      <div class="note-meta">
+        <div class="note-tags">${(n.tags||[]).map(t=>`<span class="note-tag">${escapeHtml(t)}</span>`).join('')}</div>
+        <div class="note-date">${fmtDate(n.createdAt)} ${n.used ? '<span class="used-badge">использовано</span>' : ''}</div>
+      </div>
+      <div class="note-actions">
+        <button class="mark-used" data-id="${n.id}">${n.used ? 'Вернуть в идеи' : 'Отметить использованной'}</button>
+        <button class="del-note" data-id="${n.id}">Удалить</button>
+      </div>
+    </div>
+  `).join('');
+
+  listEl.querySelectorAll('.mark-used').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const n = notes.find(x=>x.id===btn.dataset.id);
+      n.used = !n.used;
+      await saveNotes();
+      renderAll();
+    });
+  });
+  listEl.querySelectorAll('.del-note').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      if(!confirm('Удалить эту заметку?')) return;
+      notes = notes.filter(n=>n.id!==btn.dataset.id);
+      await saveNotes();
+      renderAll();
+    });
+  });
+}
+
+function renderAll(){
+  renderFilters();
+  renderNotesList();
+}
+
+document.getElementById('saveNoteBtn').addEventListener('click', async ()=>{
+  const textEl = document.getElementById('noteText');
+  const tagsEl = document.getElementById('noteTags');
+  const text = textEl.value.trim();
+  if(!text) return;
+  const tags = tagsEl.value.split(',').map(t=>t.trim()).filter(Boolean);
+  notes.push({ id: uid(), text, tags, used:false, createdAt: Date.now() });
+  await saveNotes();
+  textEl.value = ''; tagsEl.value = '';
+  renderAll();
+});
+
+document.getElementById('searchInput').addEventListener('input', renderNotesList);
+
+renderLoginForm();
+</script>
+</body>
+</html>
