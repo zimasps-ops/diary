@@ -124,6 +124,10 @@ body{
   border-bottom:1px solid var(--rule);
 }
 .month-heading:first-of-type{ margin-top:0; }
+.month-jump{
+  width:100%; margin:8px 0 4px; padding:6px 8px; border:1px solid var(--rule); border-radius:5px;
+  background:rgba(255,255,255,.5); color:var(--ink-soft); font-family:'EB Garamond',serif; font-size:13px;
+}
 .entry-item{ cursor:pointer; padding:6px 4px; border-radius:3px; color:var(--ink-soft); line-height:1.35; }
 .entry-item:hover{ background:rgba(122,34,51,.07); }
 .entry-item.active{ background:rgba(122,34,51,.12); color:var(--burgundy); }
@@ -560,6 +564,7 @@ function renderLeft(){
   }
 
   const list = sortedEntries();
+  const monthOptions = [];
   const itemsHtml = list.length === 0
     ? `<p class="empty-index">Здесь появятся твои записи.</p>`
     : (()=>{
@@ -571,8 +576,9 @@ function renderLeft(){
           if(mKey !== lastMonthKey){
             if(lastMonthKey !== null) html += `</ul>`;
             const monthLabel = d.toLocaleDateString('ru-RU', { month:'long', year:'numeric' });
-            html += `<div class="month-heading">${monthLabel}</div><ul class="entry-list">`;
+            html += `<div class="month-heading" id="month-${mKey}">${monthLabel}</div><ul class="entry-list">`;
             lastMonthKey = mKey;
+            monthOptions.push({ key: mKey, label: monthLabel });
           }
           const { date } = fmtDate(e.date);
           const preview = (e.text || '').trim().slice(0,40).replace(/\n/g,' ');
@@ -588,6 +594,12 @@ function renderLeft(){
   pageLeft.innerHTML = `
     ${tabsHtml}
     <h2 class="index-head">Оглавление</h2>
+    ${monthOptions.length > 1 ? `
+      <select class="month-jump" id="monthJump">
+        <option value="">Перейти к месяцу…</option>
+        ${monthOptions.map(m=>`<option value="month-${m.key}">${m.label}</option>`).join('')}
+      </select>
+    ` : ''}
     <hr class="index-rule"/>
     ${itemsHtml}
     <button class="new-entry-btn" id="newBtn">+ Новая запись</button>
@@ -602,6 +614,13 @@ function renderLeft(){
   `;
   document.getElementById('tabEntries').addEventListener('click', ()=>{ leftTab='entries'; renderLeft(); });
   document.getElementById('tabProgress').addEventListener('click', ()=>{ leftTab='progress'; renderLeft(); });
+  const monthJumpEl = document.getElementById('monthJump');
+  if(monthJumpEl){
+    monthJumpEl.addEventListener('change', ()=>{
+      const target = document.getElementById(monthJumpEl.value);
+      if(target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
   document.getElementById('logoutBtn').addEventListener('click', ()=>{
     if(!confirm('Выйти? Записи останутся на сервере, войти снова можно тем же логином и PIN.')) return;
     cryptoKey = null; entries = []; currentId = null; currentUsername=''; currentSalt=null;
@@ -735,6 +754,7 @@ function renderRight(){
         <div class="read-text" id="readText">${escapeHtml(entry.text)}</div>
         <div id="readPhotoGrid">${photoGridHtml(entry.photos, false)}</div>
         <div class="rpage-actions">
+          <button class="act-btn primary" id="writeTodayBtn">✍️ Написать сегодня</button>
           <button class="act-btn" id="editBtn">Редактировать</button>
           <button class="act-btn" id="delBtn">Удалить</button>
         </div>
@@ -745,6 +765,11 @@ function renderRight(){
       </div>
     `;
     wirePhotoGrid(document.getElementById('readPhotoGrid'), ()=>entry.photos||[], ()=>{});
+    document.getElementById('writeTodayBtn').addEventListener('click', ()=>{
+      currentId = null;
+      pendingPhotos = [];
+      renderAll();
+    });
     document.getElementById('editBtn').addEventListener('click', ()=>{
       editPhotos = (entry.photos || []).slice();
       const inner = pageRight.querySelector('.rpage-inner');
